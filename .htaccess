@@ -1,0 +1,7 @@
+Options +FollowSymLinks
+RewriteEngine On
+RewriteRule ^$ app/index.php [L]
+RewriteRule ^page/(.+\.php)$ app/page/$1 [L]
+RewriteRule ^css/(.+)$ app/css/$1 [L]
+RewriteRule ^js/(.+)$ app/js/$1 [L]
+RewriteRule ^images/(.+)$ app/images/$1 [L]
