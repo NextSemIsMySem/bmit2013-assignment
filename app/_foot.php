@@ -1,4 +1,4 @@
-</main>
+    </main>
 
     <footer>
          <b>Fitness & Gym Equipment Online Store </b> &middot;

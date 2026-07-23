@@ -3,43 +3,13 @@ require '_base.php';
 
 $_title = 'Index';
 include '_head.php';
+
+// TODO: wire this up to the product listing once the product table exists.
 ?>
 
-<section class="product-grid">
-    <article class="product-card">
-        <h2>Dumbbells</h2>
-        <img src="/images/sport.png" alt="Dumbbells">
-        <p>RM 79.90</p>
-        <button type="button">Examine</button>
-    </article>
-
-    <article class="product-card">
-        <h2>Protein Powder</h2>
-        <img src="/images/sport.png" alt="Protein Powder">
-        <p>RM 129.90</p>
-        <button type="button">Examine</button>
-    </article>
-
-    <article class="product-card">
-        <h2>Yoga Mat</h2>
-        <img src="/images/sport.png" alt="Yoga Mat">
-        <p>RM 49.90</p>
-        <button type="button">Examine</button>
-    </article>
-
-    <article class="product-card">
-        <h2>Resistance Bands</h2>
-        <img src="/images/sport.png" alt="Resistance Bands">
-        <p>RM 35.00</p>
-        <button type="button">Examine</button>
-    </article>
-
-    <article class="product-card">
-        <h2>Workout Gloves</h2>
-        <img src="/images/sport.png" alt="Workout Gloves">
-        <p>RM 42.50</p>
-        <button type="button">Examine</button>
-    </article>
+<section class="welcome">
+    <h2>Welcome to the Fitness & Gym Equipment Online Store</h2>
+    <p>Browse our catalogue, manage your account, and check out securely.</p>
 </section>
 
 <?php

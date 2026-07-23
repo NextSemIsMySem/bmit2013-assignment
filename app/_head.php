@@ -25,10 +25,10 @@
 
     <nav>
         <a href="/index.php">Home</a>
-        <a href="/page/category.php?category=dumbbells">Dumbbells</a>
-        <a href="/page/category.php?category=protein_powder">Protein Powder</a>
-        <a href="/page/category.php?category=supplements">Supplements</a>
+        <!-- Module nav links are added here per phase (e.g. Member, Product, Cart) -->
     </nav>
+
+    <div id="info"><?= temp('info') ?></div>
 
     <main>
         <h1><?= $_title ?? 'Untitled' ?></h1>
