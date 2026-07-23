@@ -1,5 +1,6 @@
 <?php
 require '../../_base.php';
+auth('admin');
 
 $id = req('id');
 $stmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
@@ -23,7 +24,7 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (!is_email($email)) {
         $_err['email'] = 'Please enter a valid email address.';
     } elseif (strlen($email) > 255) {
         $_err['email'] = 'Email must be at most 255 characters.';
@@ -31,7 +32,7 @@ if (is_post()) {
         $_err['email'] = 'Duplicated.';
     }
 
-    if (!in_array($role, ['admin', 'customer'], true)) {
+    if (!in_array($role, ['admin', 'member'], true)) {
         $_err['role'] = 'Please select a valid role.';
     }
 
@@ -56,7 +57,7 @@ include '../../_head.php';
 <form class="form" method="post">
     <?php html_text('name', 'Name'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
-    <?php html_select('role', 'Role', ['admin' => 'Admin', 'customer' => 'Customer']); ?>
+    <?php html_select('role', 'Role', ['admin' => 'Admin', 'member' => 'Member']); ?>
     <section class="buttons">
         <button type="submit">Save</button>
         <button type="button" data-get="detail.php?id=<?= encode($id) ?>">Cancel</button>

@@ -7,18 +7,8 @@
 // ============================================================================
 // Page Load (jQuery)
 // ============================================================================
-let isLoggedIn = false;
-
-let heading = document.querySelector('.profile-link .heading');
 
 $(() => {
-    if (isLoggedIn) {
-        heading.textContent = 'Welcome, User!';
-    } else {
-        heading.textContent = 'Login/Register';
-    }
-
-  
 
 $('#faker').on('click', e => {
     window.location.href = '/';

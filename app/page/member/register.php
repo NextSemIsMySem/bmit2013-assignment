@@ -26,7 +26,7 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (!is_email($email)) {
         $_err['email'] = 'Please enter a valid email address.';
     } elseif (strlen($email) > 255) {
         $_err['email'] = 'Email must be at most 255 characters.';
@@ -47,17 +47,13 @@ if (is_post()) {
     }
 
     if (!$_err) {
-        $stmt = $_db->prepare('INSERT INTO user (username, name, email, password, role) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$username, $name, $email, password_hash($password, PASSWORD_DEFAULT), 'customer']);
+        $stmt = $_db->prepare('INSERT INTO user (username, name, email, password, role) VALUES (?, ?, ?, SHA1(?), ?)');
+        $stmt->execute([$username, $name, $email, $password, 'member']);
 
         temp('info', 'Registration successful.');
         redirect('/index.php');
     }
 }
-
-// Never echo a submitted password back into the form.
-$_REQUEST['password'] = '';
-$_REQUEST['confirm'] = '';
 
 $_title = 'Register';
 include '../../_head.php';
@@ -67,8 +63,8 @@ include '../../_head.php';
     <?php html_text('name', 'Name'); ?>
     <?php html_text('username', 'Username'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
-    <?php html_text('password', 'Password', 'password'); ?>
-    <?php html_text('confirm', 'Confirm Password', 'password'); ?>
+    <?php html_password('password', 'Password'); ?>
+    <?php html_password('confirm', 'Confirm Password'); ?>
     <section class="buttons">
         <button type="submit">Register</button>
     </section>

@@ -71,6 +71,12 @@ function html_text($name, $label, $type = 'text') {
     echo err($name);
 }
 
+function html_password($name, $attr = '') {
+    echo '<label for="' . $name . '">' . encode($attr !== '' ? $attr : 'Password') . '</label>';
+    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="">';
+    echo err($name);
+}
+
 function html_select($name, $label, $options) {
     $selected = req($name);
     echo '<label for="' . $name . '">' . encode($label) . '</label>';
@@ -154,4 +160,27 @@ function is_exists($table, $column, $value) {
     $stm = $_db->prepare("SELECT COUNT(*) FROM `$table` WHERE `$column` = ?");
     $stm->execute([$value]);
     return $stm->fetchColumn() > 0;
+}
+
+function is_email($v) {
+    return filter_var($v, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+// ============================================================================
+// Security
+// ============================================================================
+
+// Global user object (the logged-in user's row, or null)
+$_user = $_SESSION['user'] ?? null;
+
+function login($user, $url = '/') { $_SESSION['user'] = $user; redirect($url); }
+function logout($url = '/')       { unset($_SESSION['user']); redirect($url); }
+
+function auth(...$roles) {
+    global $_user;
+    if ($_user) {
+        if ($roles) { if (in_array($_user->role, $roles)) return; }
+        else        { return; }
+    }
+    redirect('/login.php');
 }
