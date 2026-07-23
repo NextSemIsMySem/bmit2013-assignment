@@ -81,16 +81,48 @@ if (searchEmptyDialog && searchEmptyClose) {
     });
 }
 
-    // Preview a chosen photo on its sibling <img>
-    $('input[type="file"]').on('change', function () {
-        const img = $(this).siblings('img')[0];
-        const file = this.files[0];
+// Preview a chosen photo on its sibling <img>
+$('input[type="file"]').on('change', function () {
+    const img = $(this).siblings('img')[0];
+    const file = this.files[0];
 
-        if (file && file.type.startsWith('image/')) {
-            img.src = URL.createObjectURL(file);
-        } else {
-            img.src = img.dataset.src;
+    if (!img) {
+        return;
+    }
+
+    if (file && file.type.startsWith('image/')) {
+        img.src = URL.createObjectURL(file);
+    } else {
+        img.src = img.dataset.src;
+    }
+});
+
+document.querySelectorAll('[data-quantity-control]').forEach(control => {
+    const quantityInput = control.querySelector('input[name="quantity"]');
+    const minusButton = control.querySelector('[data-quantity-minus]');
+    const plusButton = control.querySelector('[data-quantity-plus]');
+    const warning = control.parentElement.querySelector('[data-quantity-warning]');
+    const stock = Number.parseInt(control.dataset.stock, 10);
+
+    minusButton.addEventListener('click', () => {
+        const quantity = Number.parseInt(quantityInput.value, 10);
+
+        if (quantity > 1) {
+            quantityInput.value = quantity - 1;
         }
+
+        warning.hidden = true;
     });
 
+    plusButton.addEventListener('click', () => {
+        const quantity = Number.parseInt(quantityInput.value, 10);
+
+        if (quantity >= stock) {
+            warning.hidden = false;
+            return;
+        }
+
+        quantityInput.value = quantity + 1;
+        warning.hidden = true;
+    });
 });
