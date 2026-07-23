@@ -25,7 +25,11 @@
 
     <nav>
         <a href="/index.php">Home</a>
-        <!-- Module nav links are added here per phase (e.g. Member, Product, Cart) -->
+        <!-- TODO Phase 2: wrap in an admin-only auth() check -->
+        <a href="/page/member/index.php">Members</a>
+        <!-- TODO Phase 2: only show Register when logged out (replace with a login link when logged in) -->
+        <a href="/page/member/register.php">Register</a>
+        <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
     </nav>
 
     <div id="info"><?= temp('info') ?></div>

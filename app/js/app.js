@@ -40,4 +40,18 @@ $('#faker').on('click', e => {
         window.location.href = url;
     });
 
+    // Initiate POST request (with confirmation)
+    $('[data-post]').on('click', function (e) {
+        e.preventDefault();
+
+        const url = $(this).attr('data-post');
+        const message = $(this).attr('data-confirm') || 'Are you sure?';
+
+        if (!url || !confirm(message)) {
+            return;
+        }
+
+        $('<form>', { method: 'post', action: url }).appendTo('body').trigger('submit');
+    });
+
 });
