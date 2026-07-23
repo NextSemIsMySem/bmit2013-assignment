@@ -86,10 +86,6 @@ $('input[type="file"]').on('change', function () {
     const img = $(this).siblings('img')[0];
     const file = this.files[0];
 
-    if (!img) {
-        return;
-    }
-
     if (file && file.type.startsWith('image/')) {
         img.src = URL.createObjectURL(file);
     } else {
