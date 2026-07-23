@@ -57,7 +57,7 @@ function encode($str) {
 
 function err($name) {
     global $_err;
-    return isset($_err[$name]) ? '<span class="err">' . encode($_err[$name]) . '</span>' : '';
+    return '<span class="err">' . (isset($_err[$name]) ? encode($_err[$name]) : '') . '</span>';
 }
 
 // ============================================================================

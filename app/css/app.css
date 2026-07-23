@@ -195,14 +195,17 @@ h1 {
 
 .form {
     display: grid;
-    grid-template-columns: 160px 1fr 1fr;
-    gap: 10px 14px;
-    align-items: center;
+    grid: auto / auto auto auto;
+    gap: 5px;
+    place-content: start;
+    place-items: center start;
     max-width: 720px;
 }
 
-.form label {
-    font-weight: 500;
+.form > label {
+    place-self: stretch;
+    font-weight: bold;
+    padding: 5px;
     color: #1a1a2e;
 }
 
@@ -229,10 +232,20 @@ h1 {
     font-weight: normal;
 }
 
-.form .buttons {
-    grid-column: 2 / -1;
+.form > section {
+    grid-column: 1 / -1;
     display: flex;
     gap: 10px;
+}
+
+label > * {
+    vertical-align: text-top;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
 }
 
 .err {
@@ -273,6 +286,15 @@ h1 {
 
 .table th a.desc::after {
     content: ' \25BC';
+}
+
+.table.detail {
+    max-width: 560px;
+}
+
+.table.detail th {
+    width: 160px;
+    text-align: right;
 }
 
 /* Paging ------------------------------------------------------------------ */
