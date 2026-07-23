@@ -1,5 +1,5 @@
 <?php
-require '_base.php';
+require '../_base.php';
 
 $cat = $_GET['category'] ?? 'all';
 $categories = [
@@ -30,13 +30,14 @@ if ($cat === 'all') {
     );
 }
 
-$products = $stmt->fetchAll();
-
 $_title = 'Category | ' . $label;
-include '_head.php';
+$products = $stmt->fetchAll();
+include '../_head.php';
 ?>
 
+<h2><?= htmlspecialchars($label) ?></h2>
+<?php include '../product_template.php'; ?>
 
-<?php include 'product_template.php'; ?>
-
-<?php include '_foot.php';
+<?php
+include '../_foot.php'
+?>

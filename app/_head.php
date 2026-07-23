@@ -34,10 +34,16 @@
         <a href="/page/category.php?category=protein_powder">Protein Powder</a>
         <a href="/page/category.php?category=supplements">Supplements</a>
         <a href="/page/category.php?category=other">Others</a>
-        <form class="search-bar" action="" method="get">
-            <input type="search" name="search" placeholder="Search products..." aria-label="Search products">
+        <form id="search-form" class="search-bar" action="/page/search.php" method="get">
+            <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
+            <button type="submit" aria-label="Search">&#128269;</button>
         </form>
     </nav>
+
+    <dialog id="search-empty-dialog" aria-labelledby="search-empty-message">
+        <p id="search-empty-message">Please enter a product name.</p>
+        <button id="search-empty-close" type="button">OK</button>
+    </dialog>
 
     <div id="info"><?= temp('info') ?></div>
 
