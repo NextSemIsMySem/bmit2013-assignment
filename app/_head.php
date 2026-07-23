@@ -16,6 +16,10 @@
                 <img class="faker" src="/images/sport.png" alt="Logo">
             </a>
             <h1 class="demotitle">Shopping Center Demo</h1>
+            <a href="/" class="profile-link">
+                <h1 class="heading">Profile</h1>
+                <img class="profile-icon" src="/images/profile.png" alt="Profile">
+            </a>
         </div>
     </header>
 

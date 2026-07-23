@@ -7,33 +7,18 @@
 // ============================================================================
 // Page Load (jQuery)
 // ============================================================================
+let isLoggedIn = false;
+
+let heading = document.querySelector('.profile-link .heading');
 
 $(() => {
+    if (isLoggedIn) {
+        heading.textContent = 'Welcome, User!';
+    } else {
+        heading.textContent = 'Login/Register';
+    }
 
-    
-    // ============================================================================
-    // Demo 1 - Image Switcher
-    // ============================================================================
-
-    const arr = [
-        '/images/1.jpg',
-        '/images/2.jpg',
-        '/images/3.jpg',
-        '/images/4.jpg',
-    ];
-
-    let i = 0;
-
-    $('#img').on('click', e => {
-        i = ++i % arr.length;
-
-        $('#p').text(`Image ${i + 1} of 4`);
-
-        $('#img')
-            .hide()
-            .prop('src', arr[i])
-            .fadeIn();
-    });
+  
 
 $('#faker').on('click', e => {
     window.location.href = '/';
