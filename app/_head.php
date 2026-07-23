@@ -29,6 +29,8 @@
         <a href="/page/member/index.php">Members</a>
         <?php endif; ?>
         <?php if ($_user): ?>
+        <a href="/page/user/profile.php">Profile</a>
+        <a href="/page/user/password.php">Password</a>
         <a href="/logout.php">Logout</a>
         <?php else: ?>
         <a href="/login.php">Login</a>
