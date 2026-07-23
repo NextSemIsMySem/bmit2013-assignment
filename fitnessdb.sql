@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
-    `role` ENUM('customer', 'admin') NOT NULL DEFAULT 'customer',
+    `role` ENUM('admin', 'member') NOT NULL DEFAULT 'member',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

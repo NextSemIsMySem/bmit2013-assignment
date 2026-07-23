@@ -7,9 +7,6 @@
 // ============================================================================
 // Page Load (jQuery)
 // ============================================================================
-let isLoggedIn = false;
-
-let heading = document.querySelector('.profile-link .heading');
 
 $(() => {
     if (isLoggedIn) {

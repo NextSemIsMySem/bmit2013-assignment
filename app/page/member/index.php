@@ -1,5 +1,7 @@
 <?php
 require '../../_base.php';
+auth('admin');
+
 require '../../lib/SimplePager.php';
 
 $fields = [
