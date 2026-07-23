@@ -48,7 +48,7 @@ nav {
     background: #1a1a2e;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     box-sizing: border-box;
     padding: 6px 30px;
     gap: 6px;
@@ -77,6 +77,34 @@ nav a.active {
     background: #16213e;
     color: #ffffff;
     border-bottom-color: #e74c3c;
+}
+
+.search-bar {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+}
+
+.search-bar input {
+    width: 220px;
+    padding: 8px 12px;
+    border: 1px solid #d7dbe5;
+    border-radius: 4px;
+    color: #1a1a2e;
+    background: #ffffff;
+}
+
+.search-bar button {
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 4px;
+    color: #ffffff;
+    background: #e74c3c;
+    cursor: pointer;
+}
+
+.search-bar button:hover {
+    background: #c0392b;
 }
 
 main {
@@ -168,19 +196,146 @@ h1 {
     font-weight: 700;
 }
 
-.product-card button {
+.product-card .examine-button {
     width: 100%;
     padding: 10px 14px;
+    box-sizing: border-box;
+    display: block;
     border: 0;
     border-radius: 6px;
     background: #f28c28;
     color: #ffffff;
     font-weight: 700;
+    text-decoration: none;
     cursor: pointer;
 }
 
-.product-card button:hover {
+.product-card .examine-button:hover {
     background: #d97818;
+}
+
+/* Product details --------------------------------------------------------- */
+
+.product-detail {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) 1fr;
+    gap: 32px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.product-detail > img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+}
+
+.product-detail-content h2 {
+    margin-top: 0;
+}
+
+.product-detail-price {
+    color: #e74c3c;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.product-details-list {
+    margin: 20px 0;
+}
+
+.product-details-list div {
+    padding: 7px 0;
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.product-details-list dt {
+    font-weight: 700;
+}
+
+.product-details-list dd {
+    margin: 0;
+}
+
+.low-stock,
+.out-of-stock,
+.quantity-warning {
+    color: #c0392b;
+    font-weight: 700;
+}
+
+.purchase-controls,
+.quantity-box {
+    display: flex;
+    align-items: center;
+}
+
+.purchase-controls {
+    gap: 12px;
+}
+
+.quantity-box {
+    border: 1px solid #c9ccd6;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.quantity-box button,
+.quantity-box input,
+.purchase-button {
+    height: 42px;
+    border: 0;
+    font: inherit;
+}
+
+.quantity-box button {
+    width: 42px;
+    background: #f4f5f7;
+    cursor: pointer;
+}
+
+.quantity-box input {
+    width: 54px;
+    padding: 0;
+    text-align: center;
+    appearance: textfield;
+    border-right: 1px solid #c9ccd6;
+    border-left: 1px solid #c9ccd6;
+}
+
+.quantity-box input::-webkit-inner-spin-button,
+.quantity-box input::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+.purchase-button {
+    padding: 0 24px;
+    border-radius: 6px;
+    color: #ffffff;
+    background: #e74c3c;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.purchase-button:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.purchase-button:disabled {
+    background: #a0a8c0;
+    cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+    .product-detail {
+        grid-template-columns: 1fr;
+    }
 }
 
 .welcome {
@@ -371,4 +526,43 @@ nav.pager span.current {
     10% { opacity: 1; transform: translate(-50%, 0); }
     80% { opacity: 1; }
     100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+/* Empty search dialog ------------------------------------------------------ */
+
+#search-empty-dialog {
+    color: #ffffff;
+    background: #e74c3c;
+    border: 1px solid #c0392b;
+    border-radius: 6px;
+    padding: 16px 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+#search-empty-dialog[open] {
+    animation: search-dialog-fade 5s ease forwards;
+}
+
+#search-empty-dialog p {
+    margin: 0 0 12px;
+}
+
+#search-empty-dialog button {
+    display: block;
+    margin: 0 auto;
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#search-empty-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+@keyframes search-dialog-fade {
+    0% { opacity: 0; transform: translateY(-20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
 }

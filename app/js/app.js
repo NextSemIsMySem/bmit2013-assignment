@@ -9,10 +9,16 @@
 // ============================================================================
 
 $(() => {
+    if (isLoggedIn) {
+        heading.textContent = 'Welcome, User!';
+    } else {
+        heading.textContent = 'Login/Register';
+    }
 
-$('#faker').on('click', e => {
-    window.location.href = '/';
-});
+    $('#faker').on('click', e => {
+        window.location.href = '/';
+    });
+
     // Initiate GET request
     $('[data-get]').on('click', function (e) {
         e.preventDefault();
@@ -43,6 +49,37 @@ $('#faker').on('click', e => {
 
         $('<form>', { method: 'post', action: url }).appendTo('body').trigger('submit');
     });
+});
+
+const searchForm = document.querySelector('#search-form');
+const searchInput = document.querySelector('#search-input');
+const searchEmptyDialog = document.querySelector('#search-empty-dialog');
+const searchEmptyClose = document.querySelector('#search-empty-close');
+let searchDialogTimer;
+
+if (searchForm && searchInput && searchEmptyDialog) {
+    searchForm.addEventListener('submit', event => {
+        if (searchInput.value.trim() === '') {
+            event.preventDefault();
+            searchEmptyDialog.showModal();
+
+            searchDialogTimer = window.setTimeout(() => {
+                searchEmptyDialog.close();
+            }, 5000);
+        }
+    });
+
+    searchEmptyDialog.addEventListener('close', () => {
+        window.clearTimeout(searchDialogTimer);
+        searchInput.focus();
+    });
+}
+
+if (searchEmptyDialog && searchEmptyClose) {
+    searchEmptyClose.addEventListener('click', () => {
+        searchEmptyDialog.close();
+    });
+}
 
     // Preview a chosen photo on its sibling <img>
     $('input[type="file"]').on('change', function () {
