@@ -1,5 +1,6 @@
 <?php
 require '../../_base.php';
+auth('admin');
 
 if (!is_post()) {
     redirect('index.php');

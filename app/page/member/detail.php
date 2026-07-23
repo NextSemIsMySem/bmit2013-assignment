@@ -1,5 +1,6 @@
 <?php
 require '../../_base.php';
+auth('admin');
 
 $id = req('id');
 $stmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');

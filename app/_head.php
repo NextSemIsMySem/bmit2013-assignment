@@ -17,7 +17,7 @@
             </a>
             <h1 class="demotitle">Shopping Center Demo</h1>
             <a href="/" class="profile-link">
-                <h1 class="heading">Profile</h1>
+                <h1 class="heading"><?= $_user ? encode($_user->name) . ' (' . encode($_user->role) . ')' : 'Login/Register' ?></h1>
                 <img class="profile-icon" src="/images/profile.png" alt="Profile">
             </a>
         </div>
@@ -25,10 +25,15 @@
 
     <nav>
         <a href="/index.php">Home</a>
-        <!-- TODO Phase 2: wrap in an admin-only auth() check -->
+        <?php if ($_user?->role === 'admin'): ?>
         <a href="/page/member/index.php">Members</a>
-        <!-- TODO Phase 2: only show Register when logged out (replace with a login link when logged in) -->
+        <?php endif; ?>
+        <?php if ($_user): ?>
+        <a href="/logout.php">Logout</a>
+        <?php else: ?>
+        <a href="/login.php">Login</a>
         <a href="/page/member/register.php">Register</a>
+        <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
     </nav>
 
