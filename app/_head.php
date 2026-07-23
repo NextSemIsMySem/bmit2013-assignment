@@ -15,7 +15,7 @@
             <a href="/">
                 <img class="faker" src="/images/sport.png" alt="Logo">
             </a>
-            <h1 class="demotitle">Shopping Center Demo</h1>
+            <h1 class="demotitle">ForgeFit Fitness Market</h1>
             <a href="/" class="profile-link">
                 <h1 class="heading">Profile</h1>
                 <img class="profile-icon" src="/images/profile.png" alt="Profile">
@@ -30,6 +30,13 @@
         <!-- TODO Phase 2: only show Register when logged out (replace with a login link when logged in) -->
         <a href="/page/member/register.php">Register</a>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
+        <a href="/page/category.php?category=dumbbells">Dumbbells</a>
+        <a href="/page/category.php?category=protein_powder">Protein Powder</a>
+        <a href="/page/category.php?category=supplements">Supplements</a>
+        <a href="/page/category.php?category=other">Others</a>
+        <form class="search-bar" action="" method="get">
+            <input type="search" name="search" placeholder="Search products..." aria-label="Search products">
+        </form>
     </nav>
 
     <div id="info"><?= temp('info') ?></div>
