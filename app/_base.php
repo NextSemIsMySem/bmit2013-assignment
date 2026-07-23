@@ -77,6 +77,10 @@ function html_password($name, $attr = '') {
     echo err($name);
 }
 
+function html_file($key, $accept = '', $attr = '') {
+    echo "<input type='file' id='$key' name='$key' accept='$accept' $attr>";
+}
+
 function html_select($name, $label, $options) {
     $selected = req($name);
     echo '<label for="' . $name . '">' . encode($label) . '</label>';
@@ -183,4 +187,23 @@ function auth(...$roles) {
         else        { return; }
     }
     redirect('/login.php');
+}
+
+// ============================================================================
+// Photos
+// ============================================================================
+
+function get_file($key) {
+    $f = $_FILES[$key] ?? null;
+    if ($f && $f['error'] == 0) return (object) $f;
+    return null;
+}
+
+function save_photo($f, $folder = null, $width = 200, $height = 200) {
+    $folder ??= __DIR__ . '/photos';
+    $photo = uniqid() . '.jpg';
+    require_once __DIR__ . '/lib/SimpleImage.php';
+    $img = new \claviska\SimpleImage();
+    $img->fromFile($f->tmp_name)->thumbnail($width, $height)->toFile("$folder/$photo", 'image/jpeg');
+    return $photo;
 }

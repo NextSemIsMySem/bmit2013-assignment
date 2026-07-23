@@ -18,7 +18,7 @@
             <h1 class="demotitle">Shopping Center Demo</h1>
             <a href="/" class="profile-link">
                 <h1 class="heading"><?= $_user ? encode($_user->name) . ' (' . encode($_user->role) . ')' : 'Login/Register' ?></h1>
-                <img class="profile-icon" src="/images/profile.png" alt="Profile">
+                <img class="profile-icon" src="<?= $_user?->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
             </a>
         </div>
     </header>

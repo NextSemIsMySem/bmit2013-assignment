@@ -44,4 +44,16 @@ $('#faker').on('click', e => {
         $('<form>', { method: 'post', action: url }).appendTo('body').trigger('submit');
     });
 
+    // Preview a chosen photo on its sibling <img>
+    $('input[type="file"]').on('change', function () {
+        const img = $(this).siblings('img')[0];
+        const file = this.files[0];
+
+        if (file && file.type.startsWith('image/')) {
+            img.src = URL.createObjectURL(file);
+        } else {
+            img.src = img.dataset.src;
+        }
+    });
+
 });

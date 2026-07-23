@@ -11,11 +11,14 @@ if (!$member) {
     redirect('index.php');
 }
 
+$photoUrl = $member->photo ? '/photos/' . encode($member->photo) : '/images/profile.png';
+
 $_title = 'Member Detail';
 include '../../_head.php';
 ?>
 
 <table class="table detail">
+    <tr><th>Photo</th><td><img class="detail-photo" src="<?= $photoUrl ?>" alt="Photo"></td></tr>
     <tr><th>Id</th><td><?= encode($member->user_id) ?></td></tr>
     <tr><th>Username</th><td><?= encode($member->username) ?></td></tr>
     <tr><th>Name</th><td><?= encode($member->name) ?></td></tr>
