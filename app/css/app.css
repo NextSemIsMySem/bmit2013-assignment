@@ -397,6 +397,15 @@ label > * {
     vertical-align: text-top;
 }
 
+label.upload img {
+    display: block;
+    border: 1px solid #333;
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
 .buttons {
     display: flex;
     gap: 10px;
@@ -450,6 +459,15 @@ label > * {
 .table.detail th {
     width: 160px;
     text-align: right;
+}
+
+.detail-photo {
+    display: block;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 1px solid #333;
+    border-radius: 4px;
 }
 
 /* Paging ------------------------------------------------------------------ */

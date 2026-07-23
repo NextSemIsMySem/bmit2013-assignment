@@ -35,26 +35,49 @@ if (is_post()) {
         $_err['email'] = 'Duplicated';
     }
 
+    $photo = $_user->photo;
+    $f = get_file('photo');
+    if ($f) {
+        if (!str_starts_with($f->type, 'image/')) {
+            $_err['photo'] = 'Photo must be an image file.';
+        } elseif ($f->size > 1 * 1024 * 1024) {
+            $_err['photo'] = 'Photo must be 1MB or smaller.';
+        } else {
+            if ($_user->photo) {
+                @unlink(__DIR__ . '/../../photos/' . $_user->photo);
+            }
+            $photo = save_photo($f);
+        }
+    }
+
     if (!$_err) {
-        $stm = $_db->prepare('UPDATE user SET name = ?, email = ? WHERE user_id = ?');
-        $stm->execute([$name, $email, $_user->user_id]);
+        $stm = $_db->prepare('UPDATE user SET name = ?, email = ?, photo = ? WHERE user_id = ?');
+        $stm->execute([$name, $email, $photo, $_user->user_id]);
 
         $_user->name = $name;
         $_user->email = $email;
+        $_user->photo = $photo;
 
         temp('info', 'Profile updated.');
         redirect('/page/user/profile.php');
     }
 }
 
+$photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
+
 $_title = 'My Profile';
 include '../../_head.php';
 ?>
 
-<!-- TODO Practical 6: profile photo upload -->
-<form class="form" method="post">
+<form class="form" method="post" enctype="multipart/form-data">
     <?php html_text('name', 'Name'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
+    <label for="photo">Photo</label>
+    <label class="upload" tabindex="0">
+        <?= html_file('photo', 'image/*', 'hidden') ?>
+        <img src="<?= $photoUrl ?>" data-src="<?= $photoUrl ?>">
+    </label>
+    <?= err('photo') ?>
     <section class="buttons">
         <button type="submit">Save</button>
         <button type="reset">Reset</button>

@@ -46,9 +46,21 @@ if (is_post()) {
         $_err['confirm'] = 'Not matched.';
     }
 
+    $f = get_file('photo');
+    $photo = null;
+    if ($f) {
+        if (!str_starts_with($f->type, 'image/')) {
+            $_err['photo'] = 'Photo must be an image file.';
+        } elseif ($f->size > 1 * 1024 * 1024) {
+            $_err['photo'] = 'Photo must be 1MB or smaller.';
+        } else {
+            $photo = save_photo($f);
+        }
+    }
+
     if (!$_err) {
-        $stmt = $_db->prepare('INSERT INTO user (username, name, email, password, role) VALUES (?, ?, ?, SHA1(?), ?)');
-        $stmt->execute([$username, $name, $email, $password, 'member']);
+        $stmt = $_db->prepare('INSERT INTO user (username, name, email, password, role, photo) VALUES (?, ?, ?, SHA1(?), ?, ?)');
+        $stmt->execute([$username, $name, $email, $password, 'member', $photo]);
 
         temp('info', 'Registration successful.');
         redirect('/index.php');
@@ -59,12 +71,18 @@ $_title = 'Register';
 include '../../_head.php';
 ?>
 
-<form class="form" method="post">
+<form class="form" method="post" enctype="multipart/form-data">
     <?php html_text('name', 'Name'); ?>
     <?php html_text('username', 'Username'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
     <?php html_password('password', 'Password'); ?>
     <?php html_password('confirm', 'Confirm Password'); ?>
+    <label for="photo">Photo</label>
+    <label class="upload" tabindex="0">
+        <?= html_file('photo', 'image/*', 'hidden') ?>
+        <img src="/images/profile.png" data-src="/images/profile.png">
+    </label>
+    <?= err('photo') ?>
     <section class="buttons">
         <button type="submit">Register</button>
     </section>
