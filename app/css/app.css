@@ -158,9 +158,13 @@ h1 {
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 20px;
     align-items: stretch;
+}
+
+.product-grid--homepage {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .product-card {
