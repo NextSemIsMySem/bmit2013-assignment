@@ -14,7 +14,10 @@ include '_head.php';
     <p>Browse our catalogue, manage your account, and check out securely.</p>
 </section>
 <br>
-    <?php include 'product_template.php'; ?>
+    <?php
+    $productGridClass = 'product-grid--homepage';
+    include 'product_template.php';
+    ?>
 
 <?php
 include '_foot.php';

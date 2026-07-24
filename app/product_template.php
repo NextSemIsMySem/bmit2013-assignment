@@ -1,4 +1,4 @@
-<section class="product-grid">
+<section class="product-grid<?= !empty($productGridClass) ? ' ' . htmlspecialchars($productGridClass) : '' ?>">
     <?php if ($products): ?>
         <?php foreach ($products as $product): ?>
             <article
