@@ -48,7 +48,15 @@ CREATE TABLE IF NOT EXISTS `product` (
     FOREIGN KEY (`category_id`) REFERENCES `category`(`category_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- 5. CartItem Table
+-- 5. ProductImage Table
+CREATE TABLE IF NOT EXISTS `product_image` (
+    `product_id` INT NOT NULL,
+    `product_imageid` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`product_id`, `product_imageid`),
+    FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 6. CartItem Table
 CREATE TABLE IF NOT EXISTS `cart_item` (
     `user_id` INT NOT NULL,
     `product_id` INT NOT NULL,
@@ -59,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `cart_item` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 6. WishlistItem Table
+-- 7. WishlistItem Table
 CREATE TABLE IF NOT EXISTS `wishlist_item` (
     `user_id` INT NOT NULL,
     `product_id` INT NOT NULL,
@@ -69,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `wishlist_item` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 7. Voucher Table
+-- 8. Voucher Table
 CREATE TABLE IF NOT EXISTS `voucher` (
     `voucher_id` INT AUTO_INCREMENT PRIMARY KEY,
     `code` VARCHAR(50) NOT NULL UNIQUE,
@@ -84,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `voucher` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- 8. Order Table
+-- 9. Order Table
 CREATE TABLE IF NOT EXISTS `orders` (
     `order_id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL,
@@ -104,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
     FOREIGN KEY (`voucher_id`) REFERENCES `voucher`(`voucher_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- 9. OrderProduct Table
+-- 10. OrderProduct Table
 CREATE TABLE IF NOT EXISTS `order_product` (
     `order_id` INT NOT NULL,
     `product_id` INT NOT NULL,
@@ -116,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `order_product` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- 10. Payment Table
+-- 11. Payment Table
 CREATE TABLE IF NOT EXISTS `payment` (
     `payment_id` INT AUTO_INCREMENT PRIMARY KEY,
     `order_id` INT NOT NULL UNIQUE,
