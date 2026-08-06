@@ -3,6 +3,7 @@ require '../../_base.php';
 auth();
 
 $_title = 'Profile';
+$_navSection = 'profile';
 include '../../_head.php';
 ?>
 

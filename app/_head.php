@@ -33,6 +33,10 @@
     </header>
 
     <nav>
+        <?php if (($_navSection ?? null) === 'profile'): ?>
+        <a href="/page/profile/profile.php">Profile</a>
+        <a href="/page/profile/password.php">Password</a>
+        <?php else: ?>
         <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>
         <a href="/page/admin/member/index.php">Members</a>
@@ -51,6 +55,7 @@
         <button class="cart-button" type="button" aria-label="Shopping cart">
             <img src="/images/cart.png" alt="">
         </button>
+        <?php endif; ?>
         <?php endif; ?>
     </nav>
 
