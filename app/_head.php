@@ -7,36 +7,39 @@
     <link rel="stylesheet" href="/css/app.css">
     <link rel="icon" href="data:,">
     <link rel="shortcut icon" href="data:,">
+    <script>const isLoggedIn = <?= $_user ? 'true' : 'false' ?>;</script>
 </head>
 
 <body>
     <header>
         <div class="title">
             <a href="/">
-                <img class="faker" src="/images/sport.png" alt="Logo">
+                <img class="sport" src="/images/sport.png" alt="Logo">
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
-            <a href="/" class="profile-link">
-                <h1 class="heading"><?= $_user ? encode($_user->name) . ' (' . encode($_user->role) . ')' : 'Login/Register' ?></h1>
-                <img class="profile-icon" src="<?= $_user?->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
-            </a>
+            <?php if ($_user): ?>
+                <a href="/page/profile/profile.php" class="profile-link">
+                    <h1 class="heading"><?= encode($_user->name) . ' (' . encode($_user->role) . ')' ?></h1>
+                    <img class="profile-icon" src="<?= $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
+                </a>
+            <?php else: ?>
+                <div class="guest-actions" aria-label="Account actions">
+                    <a class="guest-action" href="/login.php">Login</a>
+                    <a class="guest-action" href="/page/member/register.php">Register</a>
+                    <img class="profile-icon" src="/images/profile.png" alt="Profile">
+                </div>
+            <?php endif; ?>
         </div>
     </header>
 
     <nav>
         <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>
-        <a href="/page/member/index.php">Members</a>
-        <?php endif; ?>
-        <?php if ($_user): ?>
-        <a href="/page/user/profile.php">Profile</a>
-        <a href="/page/user/password.php">Password</a>
-        <a href="/logout.php">Logout</a>
-        <?php else: ?>
-        <a href="/login.php">Login</a>
-        <a href="/page/member/register.php">Register</a>
+        <a href="/page/admin/member/index.php">Members</a>
+        <a href="/page/admin/products.php">Products</a>
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
+        <?php if ($_user?->role !== 'admin'): ?>
         <a href="/page/category.php?category=dumbbells">Dumbbells</a>
         <a href="/page/category.php?category=protein_powder">Protein Powder</a>
         <a href="/page/category.php?category=supplements">Supplements</a>
@@ -45,6 +48,10 @@
             <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
             <button type="submit" aria-label="Search">&#128269;</button>
         </form>
+        <button class="cart-button" type="button" aria-label="Shopping cart">
+            <img src="/images/cart.png" alt="">
+        </button>
+        <?php endif; ?>
     </nav>
 
     <dialog id="search-empty-dialog" aria-labelledby="search-empty-message">

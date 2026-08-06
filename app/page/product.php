@@ -23,6 +23,15 @@ if ($id) {
     $product = $stmt->fetch();
 }
 
+$isWishlisted = false;
+if ($product && $_user) {
+    $wishlistCheck = $_db->prepare(
+        'SELECT 1 FROM wishlist_item WHERE user_id = ? AND product_id = ?'
+    );
+    $wishlistCheck->execute([$_user->user_id, $product->product_id]);
+    $isWishlisted = (bool) $wishlistCheck->fetchColumn();
+}
+
 $_title = $product ? $product->product_name : 'Product Not Found';
 include '../_head.php';
 ?>
@@ -32,7 +41,20 @@ include '../_head.php';
         <img src="/images/sport.png" alt="<?= htmlspecialchars($product->product_name) ?>">
 
         <section class="product-detail-content">
-            <h2><?= htmlspecialchars($product->product_name) ?></h2>
+            <div class="product-detail-title">
+                <h2><?= htmlspecialchars($product->product_name) ?></h2>
+                <button
+                    class="favourite-button"
+                    type="button"
+                    data-favourite-star
+                    data-login-required
+                    data-product-id="<?= htmlspecialchars($product->product_id) ?>"
+                    aria-pressed="<?= $isWishlisted ? 'true' : 'false' ?>"
+                    aria-label="<?= $isWishlisted ? 'Remove' : 'Add' ?> <?= htmlspecialchars($product->product_name) ?> <?= $isWishlisted ? 'from' : 'to' ?> wishlist"
+                >
+                    <img src="/images/<?= $isWishlisted ? 'yellowstar.png' : 'emptystar.png' ?>" alt="">
+                </button>
+            </div>
             <p class="product-detail-price">RM <?= htmlspecialchars($product->price) ?></p>
             <p><?= htmlspecialchars($product->description) ?></p>
 
@@ -79,9 +101,20 @@ include '../_head.php';
                 <button
                     class="purchase-button"
                     type="button"
+                    data-login-required
                     <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
                 >
                     Purchase
+                </button>
+
+                <button
+                    class="add-cart-button"
+                    type="button"
+                    data-login-required
+                    <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
+                >
+                    <img src="/images/cart.png" alt="">
+                    <span>Add to Cart</span>
                 </button>
             </div>
 
