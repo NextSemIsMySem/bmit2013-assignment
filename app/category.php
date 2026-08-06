@@ -1,4 +1,9 @@
 <?php
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    http_response_code(404);
+    exit;
+}
+
 require '_base.php';
 
 $cat = $_GET['category'] ?? 'all';
@@ -32,11 +37,13 @@ if ($cat === 'all') {
 
 $products = $stmt->fetchAll();
 
-$_title = 'Category | ' . $label;
 include '_head.php';
 ?>
 
 
-<?php include 'product_template.php'; ?>
+<?php
+$productGridClass = 'product-grid--category';
+include 'product_template.php';
+?>
 
 <?php include '_foot.php';

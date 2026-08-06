@@ -1,3 +1,10 @@
+<?php
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    http_response_code(404);
+    exit;
+}
+?>
+
 <section class="product-grid<?= !empty($productGridClass) ? ' ' . htmlspecialchars($productGridClass) : '' ?>">
     <?php if ($products): ?>
         <?php foreach ($products as $product): ?>
@@ -13,6 +20,7 @@
                     <p>RM <?= htmlspecialchars($product->price) ?></p>
                 <?php endif; ?>
                 <a class="examine-button" href="/page/product.php?id=<?= htmlspecialchars($product->id) ?>">
+                    <img src="/images/search.png" alt="">
                     Examine
                 </a>
             </article>
