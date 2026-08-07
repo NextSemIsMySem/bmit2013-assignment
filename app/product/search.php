@@ -85,7 +85,7 @@ include '../_head.php';
             foreach ($resultGroups as $group) {
                 $products = array_merge($products, $group['products']);
             }
-            include '../product_template.php';
+            include 'product_template.php';
             ?>
         <?php else: ?>
             <p>No matching products found.</p>

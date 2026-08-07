@@ -16,7 +16,7 @@ include '_head.php';
 <br>
     <?php
     $productGridClass = 'product-grid--homepage';
-    include 'product_template.php';
+    include 'product/product_template.php';
     ?>
 
 <?php

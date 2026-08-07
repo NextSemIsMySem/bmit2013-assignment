@@ -149,7 +149,7 @@ document.querySelectorAll('[data-favourite-star]').forEach(button => {
         button.disabled = true;
 
         try {
-            const response = await fetch('/page/wishlist-toggle.php', {
+            const response = await fetch('/product/wishlist-toggle.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ product_id: button.dataset.productId }),

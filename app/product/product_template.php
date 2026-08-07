@@ -19,7 +19,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                 <?php if (isset($product->price)): ?>
                     <p>RM <?= htmlspecialchars($product->price) ?></p>
                 <?php endif; ?>
-                <a class="examine-button" href="/page/product.php?id=<?= htmlspecialchars($product->id) ?>">
+                <a class="examine-button" href="/product/product.php?id=<?= htmlspecialchars($product->id) ?>">
                     <img src="/images/search.png" alt="">
                     Examine
                 </a>
