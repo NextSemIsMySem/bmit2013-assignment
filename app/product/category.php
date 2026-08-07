@@ -80,7 +80,7 @@ include '../_head.php';
 <h2><?= htmlspecialchars($label) ?></h2>
 <?php
 $productGridClass = 'product-grid--category';
-include '../product_template.php';
+include 'product_template.php';
 ?>
 
 <?php

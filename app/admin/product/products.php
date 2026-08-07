@@ -51,6 +51,6 @@ $adminActions = [
         'class'   => fn($row) => $row->availability ? '' : 'admin-action-button--inactive',
     ],
 ];
-include '../../admin_table.php';
+include '../admin_table.php';
 
 include '../../_foot.php';

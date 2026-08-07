@@ -1,5 +1,5 @@
 <?php
-require '../../_base.php';
+require '../_base.php';
 auth();
 
 if (is_post()) {
@@ -35,12 +35,12 @@ if (is_post()) {
         $stm->execute([$new_password, $_user->user_id]);
 
         temp('info', 'Password updated.');
-        redirect('/page/user/profile.php');
+        redirect('/user/profile.php');
     }
 }
 
 $_title = 'Change Password';
-include '../../_head.php';
+include '../_head.php';
 ?>
 
 <form class="form" method="post">
@@ -54,4 +54,4 @@ include '../../_head.php';
 </form>
 
 <?php
-include '../../_foot.php';
+include '../_foot.php';

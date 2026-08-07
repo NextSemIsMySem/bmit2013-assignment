@@ -1,5 +1,5 @@
 <?php
-require '../../_base.php';
+require '../_base.php';
 auth();
 
 if (is_get()) {
@@ -44,7 +44,7 @@ if (is_post()) {
             $_err['photo'] = 'Photo must be 1MB or smaller.';
         } else {
             if ($_user->photo) {
-                @unlink(__DIR__ . '/../../photos/' . $_user->photo);
+                @unlink(__DIR__ . '/../photos/' . $_user->photo);
             }
             $photo = save_photo($f);
         }
@@ -59,14 +59,14 @@ if (is_post()) {
         $_user->photo = $photo;
 
         temp('info', 'Profile updated.');
-        redirect('/page/user/profile.php');
+        redirect('/user/profile.php');
     }
 }
 
 $photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
 
 $_title = 'My Profile';
-include '../../_head.php';
+include '../_head.php';
 ?>
 
 <form class="form" method="post" enctype="multipart/form-data">
@@ -85,4 +85,4 @@ include '../../_head.php';
 </form>
 
 <?php
-include '../../_foot.php';
+include '../_foot.php';

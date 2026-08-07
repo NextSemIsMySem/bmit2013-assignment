@@ -1,5 +1,5 @@
 codes/
 CLAUDE.md
 ROADMAP.md
-app/page/dev-admin-login.php
-app/page/dev-member-login.php
+app/admin/dev-admin-login.php
+app/admin/dev-member-login.php
