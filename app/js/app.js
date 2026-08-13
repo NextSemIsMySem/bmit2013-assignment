@@ -190,3 +190,40 @@ function showInfo(message) {
     void info.offsetWidth;
     info.style.animation = '';
 }
+
+// Profile menu toggle
+(function () {
+    const profileLink = document.getElementById('profile-link');
+    const profileMenu = document.getElementById('profile-menu');
+    if (!profileLink || !profileMenu) return;
+
+    function closeMenu() {
+        profileMenu.classList.remove('open');
+        profileMenu.setAttribute('aria-hidden', 'true');
+        profileLink.setAttribute('aria-expanded', 'false');
+    }
+
+    function openMenu() {
+        profileMenu.classList.add('open');
+        profileMenu.setAttribute('aria-hidden', 'false');
+        profileLink.setAttribute('aria-expanded', 'true');
+    }
+
+    profileLink.addEventListener('click', function (e) {
+        // prevent normal navigation; toggle menu instead
+        e.preventDefault();
+        if (profileMenu.classList.contains('open')) closeMenu(); else openMenu();
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!profileMenu.contains(e.target) && !profileLink.contains(e.target)) {
+            closeMenu();
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMenu();
+    });
+})();

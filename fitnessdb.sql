@@ -1,4 +1,8 @@
-CREATE DATABASE IF NOT EXISTS `fitnessdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 0;
+DROP DATABASE IF EXISTS `fitnessdb`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE DATABASE `fitnessdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `fitnessdb`;
 
 -- 1. User Table

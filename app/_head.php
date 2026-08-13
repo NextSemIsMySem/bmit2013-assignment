@@ -18,14 +18,18 @@
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
             <?php if ($_user): ?>
-                <a href="/profile/profile.php" class="profile-link">
+                <a href="/profile/profile.php" class="profile-link" id="profile-link" aria-haspopup="true" aria-expanded="false">
                     <h1 class="heading"><?= encode($_user->name) . ' (' . encode($_user->role) . ')' ?></h1>
                     <img class="profile-icon" src="<?= $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
                 </a>
+                <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
+                    <a role="menuitem" href="/profile/profile.php">Change Profile</a>
+                    <a role="menuitem" href="/logout.php">Logout</a>
+                </div>
             <?php else: ?>
                 <div class="guest-actions" aria-label="Account actions">
                     <a class="guest-action" href="/login.php">Login</a>
-                    <a class="guest-action" href="/member/register.php">Register</a>
+                    <a class="guest-action" href="/user/register.php">Register</a>
                     <img class="profile-icon" src="/images/profile.png" alt="Profile">
                 </div>
             <?php endif; ?>

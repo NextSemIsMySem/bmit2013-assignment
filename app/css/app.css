@@ -190,11 +190,49 @@ h1 {
     width: 100%;
 }
 
+/* make title a positioning context for the profile menu */
+.title {
+    position: relative;
+}
+
 .profile-link {
     margin-left: auto;
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Profile dropdown menu */
+.profile-menu {
+    position: absolute;
+    right: 0;
+    top: calc(90%);
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    min-width: 160px;
+    display: none;
+    z-index: 60;
+}
+
+.profile-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: #1a1a2e;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.profile-menu a:hover, .profile-menu a:focus {
+    background: #f4f5f7;
+}
+
+.profile-link:hover + .profile-menu,
+.profile-link:focus + .profile-menu,
+.profile-menu:hover,
+.profile-menu.open {
+    display: block;
 }
 
 .guest-actions {
@@ -635,6 +673,56 @@ h1 {
     grid-column: 1 / -1;
     display: flex;
     gap: 10px;
+}
+
+.password-requirements {
+    grid-column: 1 / -1;
+    background: transparent;
+    padding: 6px 0 0 0;
+}
+
+.password-requirements small {
+    display: block;
+    margin-bottom: 6px;
+    color: #1a1a2e;
+    font-weight: 700;
+}
+
+.password-requirements ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 12px;
+}
+
+.password-requirements li {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #a0a8c0;
+    font-size: 14px;
+}
+
+.password-requirements li .indicator {
+    width: 18px;
+    height: 18px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 4px;
+    background: #f4f5f7;
+    color: #c0392b;
+    font-weight: 700;
+}
+
+.password-requirements li.met {
+    color: #19692c;
+}
+
+.password-requirements li.met .indicator {
+    background: #dff0df;
+    color: #19692c;
 }
 
 label > * {
