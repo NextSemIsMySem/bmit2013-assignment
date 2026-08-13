@@ -18,7 +18,7 @@
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
             <?php if ($_user): ?>
-                <a href="/profile/profile.php" class="profile-link">
+                <a href="/user/profile.php" class="profile-link">
                     <h1 class="heading"><?= encode($_user->name) . ' (' . encode($_user->role) . ')' ?></h1>
                     <img class="profile-icon" src="<?= $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
                 </a>
@@ -34,8 +34,8 @@
 
     <nav>
         <?php if (($_navSection ?? null) === 'profile'): ?>
-        <a href="/profile/profile.php">Profile</a>
-        <a href="/profile/password.php">Password</a>
+        <a href="/user/profile.php">Profile</a>
+        <a href="/user/password.php">Password</a>
         <?php else: ?>
         <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>
@@ -56,6 +56,9 @@
             <img src="/images/cart.png" alt="">
         </button>
         <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($_user): ?>
+        <a href="/user/logout.php">Logout</a>
         <?php endif; ?>
     </nav>
 

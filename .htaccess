@@ -2,7 +2,6 @@ Options +FollowSymLinks
 RewriteEngine On
 RewriteRule ^$ app/index.php [L]
 RewriteRule ^user/(.+\.php)$ app/user/$1 [L]
-RewriteRule ^profile/(.+\.php)$ app/profile/$1 [L]
 RewriteRule ^admin/(.+\.php)$ app/admin/$1 [L]
 RewriteRule ^member/(.+\.php)$ app/member/$1 [L]
 RewriteRule ^product/(.+\.php)$ app/product/$1 [L]
