@@ -79,11 +79,15 @@ include '../_head.php';
                 <p class="out-of-stock">Out of stock.</p>
             <?php endif; ?>
 
-            <div
+            <form
                 class="purchase-controls"
+                method="post"
+                action="/cart/cart-add.php"
                 data-quantity-control
                 data-stock="<?= htmlspecialchars($product->stock) ?>"
             >
+                <input type="hidden" name="product_id" value="<?= htmlspecialchars($product->product_id) ?>">
+
                 <div class="quantity-box" aria-label="Product quantity">
                     <button type="button" data-quantity-minus aria-label="Decrease quantity">−</button>
                     <input
@@ -100,7 +104,9 @@ include '../_head.php';
 
                 <button
                     class="purchase-button"
-                    type="button"
+                    type="submit"
+                    name="intent"
+                    value="checkout"
                     data-login-required
                     <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
                 >
@@ -109,14 +115,16 @@ include '../_head.php';
 
                 <button
                     class="add-cart-button"
-                    type="button"
+                    type="submit"
+                    name="intent"
+                    value="cart"
                     data-login-required
                     <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
                 >
                     <img src="/images/cart.png" alt="">
                     <span>Add to Cart</span>
                 </button>
-            </div>
+            </form>
 
             <p class="quantity-warning" data-quantity-warning role="status" hidden>
                 Maximum amount you can buy reached.

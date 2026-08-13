@@ -48,13 +48,25 @@
         <a href="/product/category.php?category=protein_powder">Protein Powder</a>
         <a href="/product/category.php?category=supplements">Supplements</a>
         <a href="/product/category.php?category=other">Others</a>
+        <a href="/orders/history.php">My Orders</a>
         <form id="search-form" class="search-bar" action="/product/search.php" method="get">
             <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
             <button type="submit" aria-label="Search">&#128269;</button>
         </form>
-        <button class="cart-button" type="button" aria-label="Shopping cart">
+        <?php
+            $cartCount = 0;
+            if ($_user) {
+                $cartCountStmt = $_db->prepare('SELECT COALESCE(SUM(quantity), 0) FROM cart_item WHERE user_id = ?');
+                $cartCountStmt->execute([$_user->user_id]);
+                $cartCount = (int) $cartCountStmt->fetchColumn();
+            }
+        ?>
+        <a class="cart-button" href="/cart/cart.php" aria-label="Shopping cart (<?= $cartCount ?> item<?= $cartCount === 1 ? '' : 's' ?>)">
             <img src="/images/cart.png" alt="">
-        </button>
+            <?php if ($cartCount > 0): ?>
+                <span class="cart-badge"><?= $cartCount ?></span>
+            <?php endif; ?>
+        </a>
         <?php endif; ?>
         <?php endif; ?>
     </nav>
