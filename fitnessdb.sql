@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS `payment` (
     `amount` DECIMAL(10,2) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL,
     `status` ENUM('pending', 'success', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+    `transaction_reference` VARCHAR(255) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
