@@ -18,12 +18,13 @@
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
             <?php if ($_user): ?>
-                <a href="/profile/profile.php" class="profile-link" id="profile-link" aria-haspopup="true" aria-expanded="false">
+                <a href="/user/profile.php" class="profile-link" id="profile-link" aria-haspopup="true" aria-expanded="false">
                     <h1 class="heading"><?= encode($_user->name) . ' (' . encode($_user->role) . ')' ?></h1>
                     <img class="profile-icon" src="<?= $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
                 </a>
                 <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
-                    <a role="menuitem" href="/profile/profile.php">Change Profile</a>
+                    <a role="menuitem" href="/user/profile.php">Change Profile</a>
+                    <a role="menuitem" href="/user/password.php">Change Password</a>
                     <a role="menuitem" href="/logout.php">Logout</a>
                 </div>
             <?php else: ?>
@@ -38,8 +39,8 @@
 
     <nav>
         <?php if (($_navSection ?? null) === 'profile'): ?>
-        <a href="/profile/profile.php">Profile</a>
-        <a href="/profile/password.php">Password</a>
+        <a href="/user/profile.php">Profile</a>
+        <a href="/user/password.php">Password</a>
         <?php else: ?>
         <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>

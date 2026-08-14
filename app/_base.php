@@ -72,8 +72,9 @@ function html_text($name, $label, $type = 'text') {
 }
 
 function html_password($name, $attr = '') {
+    $value = encode(req($name));
     echo '<label for="' . $name . '">' . encode($attr !== '' ? $attr : 'Password') . '</label>';
-    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="">';
+    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
     echo err($name);
 }
 

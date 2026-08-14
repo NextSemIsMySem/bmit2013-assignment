@@ -20,10 +20,13 @@ if (is_post()) {
     }
 
     // Validate: password (server-side)
+    $passwordFailed = false;
     if ($password === '') {
         $_err['password'] = 'Password is required.';
+        $passwordFailed = true;
     } elseif (strlen($password) < 8 || strlen($password) > 50) {
         $_err['password'] = 'Password must be between 8-50 characters.';
+        $passwordFailed = true;
     } else {
         $pw_ok = preg_match('/[a-z]/', $password)
             && preg_match('/[A-Z]/', $password)
@@ -32,6 +35,7 @@ if (is_post()) {
 
         if (!$pw_ok) {
             $_err['password'] = 'Password must include upper/lowercase letters, a number and a symbol.';
+            $passwordFailed = true;
         }
     }
 
@@ -60,6 +64,16 @@ if (is_post()) {
         $_err['photo'] = 'Uploaded file must be an image.';
     } elseif ($f->size > 1 * 1024 * 1024) {
         $_err['photo'] = 'Maximum 1MB file size.';
+    }
+
+    // Clear invalid password fields after failed submit only for actual password-related errors.
+    if (isset($_err['confirm']) && $_err['confirm'] === 'Passwords do not match.') {
+        $_REQUEST['confirm'] = '';
+    }
+
+    if ($passwordFailed) {
+        $_REQUEST['password'] = '';
+        $_REQUEST['confirm'] = '';
     }
 
     if (!$_err) {
