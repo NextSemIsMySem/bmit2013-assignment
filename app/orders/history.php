@@ -18,8 +18,9 @@ array_key_exists($status, $statusTabs) || $status = '';
 
 $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1;
 
-$sql = 'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status, o.cancellation_requested_at, o.created_at
+$sql = 'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status, o.cancellation_requested_at, o.created_at, p.payment_method
         FROM orders o
+        JOIN payment p ON p.order_id = o.order_id
         WHERE o.user_id = ?';
 $params = [$_user->user_id];
 
@@ -92,6 +93,12 @@ include '../_head.php';
                             <form method="post" action="buy-again.php">
                                 <input type="hidden" name="order_id" value="<?= $order->order_id ?>">
                                 <button class="order-card-button" type="submit">Buy Again</button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if ($order->status === 'pending' && $order->payment_method === 'card' && !$order->cancellation_requested_at): ?>
+                            <form method="post" action="retry-payment.php">
+                                <input type="hidden" name="order_id" value="<?= $order->order_id ?>">
+                                <button class="order-card-button order-card-button--primary" type="submit">Pay Now</button>
                             </form>
                         <?php endif; ?>
                         <a class="order-card-button order-card-button--primary" href="detail.php?id=<?= $order->order_id ?>">View Order Details</a>

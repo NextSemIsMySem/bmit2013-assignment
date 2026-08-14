@@ -34,6 +34,10 @@ $payment = $paymentStmt->fetch();
 $canRequestCancellation = in_array($order->status, ['pending', 'paid'], true)
     && !order_has_pending_cancellation($order);
 
+$canRetryPayment = $order->status === 'pending'
+    && ($payment->payment_method ?? '') === 'card'
+    && !order_has_pending_cancellation($order);
+
 $_title = 'Order #' . $order->order_id;
 include '../_head.php';
 ?>
@@ -43,6 +47,12 @@ include '../_head.php';
 
     <section class="buttons">
         <a class="checkout-back" href="/orders/history.php">Back to Order History</a>
+        <?php if ($canRetryPayment): ?>
+            <form method="post" action="retry-payment.php">
+                <input type="hidden" name="order_id" value="<?= $order->order_id ?>">
+                <button class="purchase-button" type="submit">Pay Now</button>
+            </form>
+        <?php endif; ?>
         <?php if ($canRequestCancellation): ?>
             <button class="order-cancel-button" type="button" id="cancel-order-open">Cancel Order</button>
         <?php endif; ?>

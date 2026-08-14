@@ -1098,7 +1098,7 @@ nav.pager span.current {
 .cart-item {
     padding: 14px 18px;
     display: grid;
-    grid-template-columns: 70px 1fr auto auto auto;
+    grid-template-columns: 70px 1fr auto 130px 34px;
     align-items: center;
     gap: 18px;
     background: #ffffff;
@@ -1169,6 +1169,7 @@ nav.pager span.current {
     margin: 0;
     color: #1a1a2e;
     font-weight: 700;
+    text-align: right;
     white-space: nowrap;
 }
 

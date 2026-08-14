@@ -1,6 +1,7 @@
 <?php
 require '../_base.php';
 require '_order.php';
+require '_stripe_session.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
 auth('member');
@@ -119,71 +120,48 @@ if (is_post()) {
             'country' => $country,
         ];
 
-        if ($paymentMethod === 'cod') {
-            try {
-                $orderId = create_order_from_cart(
-                    $_db,
-                    $_user,
-                    $items,
-                    $addressFields,
-                    'cod',
-                    $voucher,
-                    $discountAmount,
-                    $subtotal,
-                    $shippingFee,
-                    'pending'
-                );
+        try {
+            // Both payment methods create the order immediately (Shopee-style
+            // for card — the order exists in a 'pending' state before the
+            // buyer has actually paid; COD just never leaves 'pending' until
+            // the courier collects on delivery, or an admin marks it later).
+            $orderId = create_order_from_cart(
+                $_db,
+                $_user,
+                $items,
+                $addressFields,
+                $paymentMethod,
+                $voucher,
+                $discountAmount,
+                $subtotal,
+                $shippingFee,
+                'pending'
+            );
+        } catch (RuntimeException $e) {
+            $_err['stock'] = $e->getMessage();
+        }
 
+        if (!$_err) {
+            if ($paymentMethod === 'cod') {
                 temp('info', 'Order placed successfully.');
                 redirect('/cart/order-confirmation.php?id=' . $orderId);
-            } catch (RuntimeException $e) {
-                $_err['stock'] = $e->getMessage();
             }
-        } else {
-            // 'card' — hand off to Stripe Checkout. The order itself is only
-            // created once Stripe confirms payment (see stripe-return.php),
-            // so stash everything needed for that here.
-            $_SESSION['checkout_pending'] = [
-                'items' => array_map(fn($item) => [
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product_name,
-                    'price' => $item->price,
-                    'quantity' => $item->quantity,
-                ], $items),
-                'address' => $addressFields,
-                'voucher_id' => $voucher->voucher_id ?? null,
-                'discount_amount' => $discountAmount,
-                'subtotal' => $subtotal,
-                'shipping_fee' => $shippingFee,
-            ];
 
+            // 'card' — the order is already saved; now send the buyer to
+            // Stripe to actually pay for it. stripe-return.php marks it paid
+            // once Stripe confirms.
             $total = $subtotal - $discountAmount + $shippingFee;
-            $baseUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
-
-            $session = stripe_request('POST', 'checkout/sessions', [
-                'mode' => 'payment',
-                'success_url' => $baseUrl . '/cart/stripe-return.php?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $baseUrl . '/cart/checkout.php',
-                'customer_email' => $_user->email,
-                'line_items' => [[
-                    'quantity' => 1,
-                    'price_data' => [
-                        'currency' => STRIPE_CURRENCY,
-                        'unit_amount' => (int) round($total * 100),
-                        'product_data' => [
-                            'name' => 'ForgeFit Order (' . count($items) . ' item' . (count($items) === 1 ? '' : 's') . ')',
-                        ],
-                    ],
-                ]],
-            ]);
+            $session = start_stripe_payment_for_order($orderId, $total, $_user->email);
 
             if ($session['code'] === 200 && !empty($session['body']->url)) {
+                $refStmt = $_db->prepare('UPDATE payment SET transaction_reference = ? WHERE order_id = ?');
+                $refStmt->execute([$session['body']->id, $orderId]);
                 redirect($session['body']->url);
-            } else {
-                unset($_SESSION['checkout_pending']);
-                $_err['payment_method'] = 'Unable to start payment right now. Please try again.';
-                error_log('Stripe checkout session error: ' . json_encode($session['body'] ?? null));
             }
+
+            error_log('Stripe checkout session error: ' . json_encode($session['body'] ?? null));
+            temp('info', 'Order placed, but we could not start the payment page. You can try paying again from your order.');
+            redirect('/orders/detail.php?id=' . $orderId);
         }
     }
 }

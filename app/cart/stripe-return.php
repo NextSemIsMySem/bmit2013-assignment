@@ -1,6 +1,5 @@
 <?php
 require '../_base.php';
-require '_order.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
 auth('member');
@@ -9,75 +8,47 @@ $sessionId = req('session_id');
 
 if ($sessionId === '') {
     temp('info', 'Missing payment session.');
-    redirect('/cart/checkout.php');
+    redirect('/orders/history.php');
 }
 
-// Idempotency: if this session was already processed (refresh, back button,
-// double callback), send them straight to the existing order instead of
-// trying to create a second one.
-$existingStmt = $_db->prepare(
-    'SELECT o.order_id
-     FROM payment p
-     JOIN orders o ON o.order_id = p.order_id
+// The order already exists (created up front at checkout) — find it by the
+// Stripe session tied to it, scoped to this user so a guessed session_id
+// can't be used to poke at someone else's order.
+$orderStmt = $_db->prepare(
+    'SELECT o.order_id, o.status
+     FROM orders o
+     JOIN payment p ON p.order_id = o.order_id
      WHERE p.transaction_reference = ? AND o.user_id = ?'
 );
-$existingStmt->execute([$sessionId, $_user->user_id]);
-$existingOrderId = $existingStmt->fetchColumn();
+$orderStmt->execute([$sessionId, $_user->user_id]);
+$order = $orderStmt->fetch();
 
-if ($existingOrderId) {
-    redirect('/cart/order-confirmation.php?id=' . $existingOrderId);
+if (!$order) {
+    temp('info', 'We could not find an order for this payment session.');
+    redirect('/orders/history.php');
+}
+
+// Already confirmed (refresh, back button, double callback) — nothing more to do.
+if ($order->status !== 'pending') {
+    redirect('/cart/order-confirmation.php?id=' . $order->order_id);
 }
 
 $session = stripe_request('GET', 'checkout/sessions/' . urlencode($sessionId));
 
 if ($session['code'] !== 200) {
     temp('info', 'We could not verify your payment. If you were charged, please contact support.');
-    redirect('/cart/checkout.php');
+    redirect('/orders/detail.php?id=' . $order->order_id);
 }
 
 if (($session['body']->payment_status ?? null) !== 'paid') {
-    temp('info', 'Payment was not completed.');
-    redirect('/cart/checkout.php');
+    temp('info', 'Payment was not completed. You can try paying again from your order.');
+    redirect('/orders/detail.php?id=' . $order->order_id);
 }
 
-$pending = $_SESSION['checkout_pending'] ?? null;
+$_db->beginTransaction();
+$_db->prepare("UPDATE orders SET status = 'paid' WHERE order_id = ?")->execute([$order->order_id]);
+$_db->prepare("UPDATE payment SET status = 'success' WHERE order_id = ?")->execute([$order->order_id]);
+$_db->commit();
 
-if (!$pending) {
-    temp('info', "Payment succeeded, but we couldn't find your pending order. If you were charged, please contact support.");
-    redirect('/index.php');
-}
-
-$items = array_map(fn($item) => (object) $item, $pending['items']);
-
-$voucher = null;
-if ($pending['voucher_id']) {
-    $voucherStmt = $_db->prepare('SELECT * FROM voucher WHERE voucher_id = ?');
-    $voucherStmt->execute([$pending['voucher_id']]);
-    $voucher = $voucherStmt->fetch() ?: null;
-}
-
-try {
-    $orderId = create_order_from_cart(
-        $_db,
-        $_user,
-        $items,
-        $pending['address'],
-        'card',
-        $voucher,
-        $pending['discount_amount'],
-        $pending['subtotal'],
-        $pending['shipping_fee'],
-        'success',
-        $sessionId
-    );
-
-    unset($_SESSION['checkout_pending']);
-    temp('info', 'Order placed successfully.');
-    redirect('/cart/order-confirmation.php?id=' . $orderId);
-} catch (RuntimeException $e) {
-    // Payment already succeeded on Stripe's side but we can't fulfill it —
-    // a real store would refund via the Stripe API here. Out of scope for
-    // now, so surface it clearly instead of silently failing.
-    temp('info', 'Payment received, but we could not reserve stock: ' . $e->getMessage() . ' Please contact support for a refund.');
-    redirect('/index.php');
-}
+temp('info', 'Payment successful.');
+redirect('/cart/order-confirmation.php?id=' . $order->order_id);

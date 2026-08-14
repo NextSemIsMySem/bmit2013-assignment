@@ -24,7 +24,7 @@ include '../_head.php';
 <?php if ($items): ?>
     <section class="cart-list">
         <?php foreach ($items as $item): ?>
-            <article class="cart-item">
+            <article class="cart-item" data-cart-item data-product-id="<?= $item->product_id ?>">
                 <img src="/images/sport.png" alt="<?= encode($item->product_name) ?>">
 
                 <div class="cart-item-info">
@@ -37,21 +37,37 @@ include '../_head.php';
                     <?php endif; ?>
                 </div>
 
-                <form class="cart-quantity-form" method="post" action="cart-update.php">
-                    <input type="hidden" name="product_id" value="<?= $item->product_id ?>">
-                    <label class="sr-only" for="quantity-<?= $item->product_id ?>">Quantity</label>
+                <div
+                    class="quantity-box"
+                    data-cart-quantity
+                    data-product-id="<?= $item->product_id ?>"
+                    data-stock="<?= $item->stock ?>"
+                    aria-label="Quantity for <?= encode($item->product_name) ?>"
+                >
+                    <button
+                        type="button"
+                        data-quantity-minus
+                        aria-label="Decrease quantity"
+                        <?= $item->quantity <= 1 || $item->stock < 1 ? 'disabled' : '' ?>
+                    >&minus;</button>
                     <input
-                        id="quantity-<?= $item->product_id ?>"
                         type="number"
-                        name="quantity"
+                        class="cart-quantity-value"
                         value="<?= $item->quantity ?>"
                         min="1"
                         max="<?= max(1, $item->stock) ?>"
+                        aria-label="Quantity"
+                        readonly
                     >
-                    <button type="submit">Update</button>
-                </form>
+                    <button
+                        type="button"
+                        data-quantity-plus
+                        aria-label="Increase quantity"
+                        <?= $item->quantity >= $item->stock ? 'disabled' : '' ?>
+                    >+</button>
+                </div>
 
-                <p class="cart-item-subtotal">RM <?= encode(number_format($item->price * $item->quantity, 2)) ?></p>
+                <p class="cart-item-subtotal" data-cart-line-total>RM <?= encode(number_format($item->price * $item->quantity, 2)) ?></p>
 
                 <button
                     class="cart-remove-button"
@@ -68,7 +84,7 @@ include '../_head.php';
     </section>
 
     <section class="cart-summary">
-        <p class="cart-summary-total">Subtotal: <strong>RM <?= encode(number_format($subtotal, 2)) ?></strong></p>
+        <p class="cart-summary-total">Subtotal: <strong data-cart-grand-total>RM <?= encode(number_format($subtotal, 2)) ?></strong></p>
         <a class="purchase-button cart-checkout-button" href="/cart/checkout.php">Proceed to Checkout</a>
     </section>
 <?php else: ?>
