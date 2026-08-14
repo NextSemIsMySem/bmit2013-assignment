@@ -46,15 +46,26 @@ if ($adminPaginate) {
         $adminPageSize = 10;
     }
 
-    $adminTotal = count($adminRows);
-    $adminPageCount = max(1, (int) ceil($adminTotal / $adminPageSize));
-    $adminPage = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1;
-    $adminPage = min(max(1, $adminPage), $adminPageCount);
-    $adminRowsToDisplay = array_slice(
-        $adminRows,
-        ($adminPage - 1) * $adminPageSize,
-        $adminPageSize
-    );
+    // Pre-paged mode: the including page already ran a LIMIT/OFFSET query
+    // (e.g. via SimplePager) and supplies the resulting page of rows plus
+    // the true total, so there is nothing left to count or slice here.
+    $adminPrePaged = isset($adminTotal, $adminPage);
+
+    if ($adminPrePaged) {
+        $adminPageCount = max(1, (int) ceil($adminTotal / $adminPageSize));
+        $adminPage = min(max(1, (int) $adminPage), $adminPageCount);
+        $adminRowsToDisplay = $adminRows;
+    } else {
+        $adminTotal = count($adminRows);
+        $adminPageCount = max(1, (int) ceil($adminTotal / $adminPageSize));
+        $adminPage = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1;
+        $adminPage = min(max(1, $adminPage), $adminPageCount);
+        $adminRowsToDisplay = array_slice(
+            $adminRows,
+            ($adminPage - 1) * $adminPageSize,
+            $adminPageSize
+        );
+    }
 
     $adminPageStart = max(1, min($adminPage - 1, $adminPageCount - 2));
     $adminPageEnd = min($adminPageCount, $adminPageStart + 2);

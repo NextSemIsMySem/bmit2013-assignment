@@ -66,6 +66,7 @@ if (is_post()) {
 $photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
 
 $_title = 'My Profile';
+$_navSection = 'profile';
 include '../_head.php';
 ?>
 

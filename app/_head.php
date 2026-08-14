@@ -74,6 +74,9 @@
         </a>
         <?php endif; ?>
         <?php endif; ?>
+        <?php if ($_user): ?>
+        <a href="/user/logout.php">Logout</a>
+        <?php endif; ?>
     </nav>
 
     <dialog id="search-empty-dialog" aria-labelledby="search-empty-message">
