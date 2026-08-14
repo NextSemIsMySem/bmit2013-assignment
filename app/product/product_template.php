@@ -14,17 +14,6 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                     data-product-id="<?= htmlspecialchars($product->id) ?>"
                 <?php endif; ?>
             >
-                <?php if (!empty($showWishlistDelete) && isset($product->id)): ?>
-                    <button
-                        class="round-delete-button"
-                        type="button"
-                        data-wishlist-delete
-                        data-product-id="<?= htmlspecialchars($product->id) ?>"
-                        aria-label="Remove <?= htmlspecialchars($product->name) ?> from wishlist"
-                    >
-                        <img src="/images/delete.png" alt="">
-                    </button>
-                <?php endif; ?>
                 <h2><?= htmlspecialchars($product->name) ?></h2>
                 <img src="/images/sport.png" alt="<?= htmlspecialchars($product->name) ?>">
                 <?php if (isset($product->price)): ?>

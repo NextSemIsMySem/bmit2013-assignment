@@ -132,7 +132,7 @@ nav a.active {
     border: 0;
 }
 
-.header-button {
+.cart-button {
     display: grid;
     place-items: center;
     width: 40px;
@@ -145,25 +145,25 @@ nav a.active {
     transition: background 0.2s ease, border-bottom-color 0.2s ease;
 }
 
-.header-button img {
+.cart-button img {
     width: 26px;
     height: 26px;
     object-fit: contain;
     transition: transform 0.2s ease;
 }
 
-.header-button:hover,
-.header-button:focus-visible {
+.cart-button:hover,
+.cart-button:focus-visible {
     background: #16213e;
     border-bottom-color: #e74c3c;
 }
 
-.header-button:hover img,
-.header-button:focus-visible img {
+.cart-button:hover img,
+.cart-button:focus-visible img {
     transform: scale(1.08);
 }
 
-.header-button:focus-visible {
+.cart-button:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: 2px;
     border-radius: 4px;
@@ -259,10 +259,6 @@ h1 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.product-grid--wishlist {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .price-range {
     display: grid;
     grid-template-columns: repeat(2, auto);
@@ -318,7 +314,6 @@ h1 {
 }
 
 .product-card {
-    position: relative;
     width: 100%;
     padding: 18px;
     box-sizing: border-box;
@@ -327,42 +322,6 @@ h1 {
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-.round-delete-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 30px;
-    height: 30px;
-    padding: 5px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 50%;
-    background: #f4f4f4;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: background 150ms ease-out, opacity 150ms ease-out;
-}
-
-.product-card .round-delete-button img,
-.product-image-list__item .round-delete-button img {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    object-fit: contain;
-}
-
-.round-delete-button:hover {
-    background: #e74c3c22;
-}
-
-.product-card.is-removing {
-    opacity: 0;
-    transition: opacity 200ms ease-out;
 }
 
 .product-card h2 {
@@ -402,7 +361,6 @@ h1 {
     font-weight: 700;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .product-card .examine-button img {
@@ -414,8 +372,6 @@ h1 {
 
 .product-card .examine-button:hover {
     background: #d97818;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(242, 140, 40, 0.4);
 }
 
 /* Product details --------------------------------------------------------- */
@@ -624,10 +580,6 @@ h1 {
     .product-grid--category {
         grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     }
-
-    .product-grid--wishlist {
-        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    }
 }
 
 .welcome {
@@ -696,63 +648,6 @@ label.upload img {
     height: 200px;
     object-fit: cover;
     cursor: pointer;
-}
-
-.form > .product-image-field {
-    display: block;
-}
-
-.product-image-field > label {
-    display: block;
-    margin-bottom: 8px;
-    color: #1a1a2e;
-    font-weight: bold;
-}
-
-.product-image-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 16px;
-    max-width: 720px;
-}
-
-.product-image-list__item {
-    position: relative;
-    margin: 0;
-}
-
-.product-image-list__item img {
-    display: block;
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-}
-
-.product-image-list__add {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 140px;
-    box-sizing: border-box;
-    padding: 20px;
-    border: 2px dashed #c9ccd6;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.product-image-list__add img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.product-image-list__add:hover,
-.product-image-list__add:focus-within {
-    border-color: #f28c28;
-    background: #fff7ef;
 }
 
 .buttons {
@@ -1084,46 +979,4 @@ nav.pager span.current {
     10% { opacity: 1; transform: translateY(0); }
     90% { opacity: 1; transform: translateY(0); }
     100% { opacity: 0; transform: translateY(-20px); }
-}
-
-/* Wishlist remove confirmation ---------------------------------------------- */
-
-#wishlist-confirm-dialog {
-    color: #ffffff;
-    background: #e74c3c;
-    border: 1px solid #c0392b;
-    border-radius: 6px;
-    padding: 20px 26px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    text-align: center;
-}
-
-#wishlist-confirm-dialog p {
-    margin: 0 0 16px;
-    font-weight: 700;
-}
-
-.wishlist-confirm-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-}
-
-.wishlist-confirm-actions button {
-    padding: 8px 16px;
-    border: 1px solid #ffffff;
-    border-radius: 4px;
-    background: transparent;
-    color: #ffffff;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-#wishlist-confirm-remove {
-    background: #ffffff;
-    color: #e74c3c;
-}
-
-#wishlist-confirm-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.35);
 }
