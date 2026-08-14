@@ -56,7 +56,7 @@ $sql .= ' ORDER BY product_name';
 $stmt = $_db->prepare($sql);
 $stmt->execute($params);
 
-$_title = 'Category | ' . $label;
+$_title = $label;
 $products = $stmt->fetchAll();
 include '../_head.php';
 ?>
@@ -77,7 +77,6 @@ include '../_head.php';
     </section>
 </form>
 
-<h2><?= htmlspecialchars($label) ?></h2>
 <?php
 $productGridClass = 'product-grid--category';
 include 'product_template.php';

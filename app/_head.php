@@ -39,7 +39,7 @@
         <?php else: ?>
         <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>
-        <a href="/admin/member/index.php">Members</a>
+        <a href="/admin/index.php">Members</a>
         <a href="/admin/product/products.php">Products</a>
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
@@ -52,9 +52,14 @@
             <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
             <button type="submit" aria-label="Search">&#128269;</button>
         </form>
-        <button class="cart-button" type="button" aria-label="Shopping cart">
+        <?php if ($_user): ?>
+        <a class="header-button" href="/product/wishlist.php" aria-label="Wishlist">
+            <img src="/images/wishlist.png" alt="">
+        </a>
+        <button class="header-button" type="button" aria-label="Shopping cart">
             <img src="/images/cart.png" alt="">
         </button>
+        <?php endif; ?>
         <?php endif; ?>
         <?php endif; ?>
     </nav>
@@ -67,4 +72,6 @@
     <div id="info"><?= temp('info') ?></div>
 
     <main>
+        <?php if (empty($_hideHeading)): ?>
         <h1><?= $_title ?? 'Untitled' ?></h1>
+        <?php endif; ?>

@@ -33,6 +33,7 @@ if ($product && $_user) {
 }
 
 $_title = $product ? $product->product_name : 'Product Not Found';
+$_hideHeading = (bool) $product;
 include '../_head.php';
 ?>
 

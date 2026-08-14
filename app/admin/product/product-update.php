@@ -17,6 +17,11 @@ foreach ($categories as $category) {
     $categoryOptions[$category->category_id] = $category->name;
 }
 
+$maxImages = 3;
+$stmt = $_db->prepare('SELECT product_imageid FROM product_image WHERE product_id = ? ORDER BY product_imageid DESC');
+$stmt->execute([$product->product_id]);
+$images = $stmt->fetchAll();
+
 if (is_post()) {
     $categoryId = req('category_id');
     $name = req('product_name');
@@ -56,6 +61,20 @@ if (is_post()) {
         $_err['availability'] = 'Please select availability.';
     }
 
+    $newPhoto = null;
+    $f = get_file('photo');
+    if ($f) {
+        if (count($images) >= $maxImages) {
+            $_err['photo'] = "You can only add up to $maxImages pictures. Remove one first.";
+        } elseif (!str_starts_with($f->type, 'image/')) {
+            $_err['photo'] = 'Photo must be an image file.';
+        } elseif ($f->size > 1 * 1024 * 1024) {
+            $_err['photo'] = 'Photo must be 1MB or smaller.';
+        } else {
+            $newPhoto = save_photo($f, __DIR__ . '/../../photos');
+        }
+    }
+
     if (!$_err) {
         $stmt = $_db->prepare(
             'UPDATE product
@@ -72,6 +91,11 @@ if (is_post()) {
             $availability,
             $id,
         ]);
+
+        if ($newPhoto) {
+            $stmt = $_db->prepare('INSERT INTO product_image (product_id, product_imageid) VALUES (?, ?)');
+            $stmt->execute([$id, $newPhoto]);
+        }
 
         temp('info', 'Product updated.');
         redirect('products.php');
@@ -91,7 +115,7 @@ $_title = 'Update Product';
 include '../../_head.php';
 ?>
 
-<form class="form" method="post">
+<form class="form" method="post" enctype="multipart/form-data">
     <?php html_select('category_id', 'Category', $categoryOptions); ?>
     <?php html_text('product_name', 'Product Name'); ?>
     <?php html_text('price', 'Price (RM)'); ?>
@@ -101,6 +125,33 @@ include '../../_head.php';
     <?= err('description') ?>
     <?php html_text('stock', 'Stock'); ?>
     <?php html_select('availability', 'Availability', ['1' => 'Available', '0' => 'Unavailable']); ?>
+    <section class="product-image-field">
+        <label>Pictures</label>
+        <div class="product-image-list">
+            <?php foreach ($images as $image): ?>
+                <figure class="product-image-list__item">
+                    <img src="/photos/<?= encode($image->product_imageid) ?>" alt="">
+                    <button
+                        type="button"
+                        class="round-delete-button"
+                        data-post="product-image-delete.php?id=<?= encode($product->product_id) ?>&image=<?= encode($image->product_imageid) ?>"
+                        data-confirm="Remove this picture?"
+                        aria-label="Remove picture"
+                        title="Remove picture"
+                    >
+                        <img src="/images/delete.png" alt="">
+                    </button>
+                </figure>
+            <?php endforeach; ?>
+            <?php if (count($images) < $maxImages): ?>
+                <label class="product-image-list__add" tabindex="0">
+                    <?= html_file('photo', 'image/*', 'hidden') ?>
+                    <img src="/images/add-picture.png" data-src="/images/add-picture.png" alt="Add picture">
+                </label>
+            <?php endif; ?>
+        </div>
+        <?= err('photo') ?>
+    </section>
     <section class="buttons">
         <button type="submit">Save</button>
         <button type="button" data-get="products.php">Cancel</button>

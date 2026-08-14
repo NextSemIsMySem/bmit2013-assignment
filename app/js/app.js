@@ -178,6 +178,68 @@ document.querySelectorAll('[data-favourite-star]').forEach(button => {
     });
 });
 
+const wishlistConfirmDialog = document.querySelector('#wishlist-confirm-dialog');
+const wishlistConfirmCancel = document.querySelector('#wishlist-confirm-cancel');
+const wishlistConfirmRemove = document.querySelector('#wishlist-confirm-remove');
+let wishlistDeleteTarget = null;
+
+document.querySelectorAll('[data-wishlist-delete]').forEach(button => {
+    button.addEventListener('click', () => {
+        wishlistDeleteTarget = button;
+        wishlistConfirmDialog?.showModal();
+    });
+});
+
+if (wishlistConfirmDialog && wishlistConfirmCancel) {
+    wishlistConfirmCancel.addEventListener('click', () => {
+        wishlistDeleteTarget = null;
+        wishlistConfirmDialog.close();
+    });
+}
+
+if (wishlistConfirmDialog && wishlistConfirmRemove) {
+    wishlistConfirmRemove.addEventListener('click', async () => {
+        const button = wishlistDeleteTarget;
+
+        if (!button) {
+            wishlistConfirmDialog.close();
+            return;
+        }
+
+        const card = button.closest('.product-card');
+
+        button.disabled = true;
+        wishlistConfirmRemove.disabled = true;
+
+        try {
+            const response = await fetch('/product/wishlist-toggle.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ product_id: button.dataset.productId }),
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Unable to update wishlist.');
+            }
+
+            showInfo(result.message);
+
+            if (card) {
+                card.classList.add('is-removing');
+                card.addEventListener('transitionend', () => card.remove(), { once: true });
+            }
+        } catch (error) {
+            showInfo(error.message || 'Unable to update wishlist.');
+            button.disabled = false;
+        } finally {
+            wishlistDeleteTarget = null;
+            wishlistConfirmRemove.disabled = false;
+            wishlistConfirmDialog.close();
+        }
+    });
+}
+
 function showInfo(message) {
     const info = document.querySelector('#info');
 
