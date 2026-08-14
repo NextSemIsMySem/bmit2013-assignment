@@ -1,4 +1,8 @@
-CREATE DATABASE IF NOT EXISTS `fitnessdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 0;
+DROP DATABASE IF EXISTS `fitnessdb`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE DATABASE `fitnessdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `fitnessdb`;
 
 -- 1. User Table
@@ -106,6 +110,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `shipping_postal_code` VARCHAR(20) NOT NULL,
     `shipping_country` VARCHAR(100) NOT NULL,
     `status` ENUM('pending', 'paid', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    `cancellation_reason` VARCHAR(255) NULL DEFAULT NULL,
+    `cancellation_requested_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE RESTRICT,
@@ -131,6 +137,7 @@ CREATE TABLE IF NOT EXISTS `payment` (
     `amount` DECIMAL(10,2) NOT NULL,
     `payment_method` VARCHAR(50) NOT NULL,
     `status` ENUM('pending', 'success', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+    `transaction_reference` VARCHAR(255) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;

@@ -32,7 +32,7 @@ if (is_post()) {
     } elseif (!is_email($email)) {
         $_err['email'] = 'Please enter a valid email address.';
     } elseif (!is_unique('user', 'email', $email, 'user_id', $_user->user_id)) {
-        $_err['email'] = 'Duplicated';
+        $_err['email'] = 'Email is already registered.';
     }
 
     $photo = $_user->photo;
@@ -66,6 +66,7 @@ if (is_post()) {
 $photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
 
 $_title = 'My Profile';
+$_navSection = 'profile';
 include '../_head.php';
 ?>
 
