@@ -25,7 +25,19 @@ $total = $order->subtotal - $order->discount_amount + $order->shipping_fee;
 ?>
 
 <?php if ($order->status === 'cancelled'): ?>
-    <div class="order-cancelled-banner">This order has been cancelled.</div>
+    <div class="order-cancelled-banner">
+        This order has been cancelled.
+        <?php if (!empty($order->cancellation_reason)): ?>
+            Reason: <?= encode($order->cancellation_reason) ?>
+        <?php endif; ?>
+    </div>
+<?php elseif (order_has_pending_cancellation($order)): ?>
+    <div class="order-request-banner">
+        Cancellation requested on <?= encode(date('d M Y, g:ia', strtotime($order->cancellation_requested_at))) ?> &mdash; awaiting admin approval.
+        <?php if (!empty($order->cancellation_reason)): ?>
+            Reason: <?= encode($order->cancellation_reason) ?>
+        <?php endif; ?>
+    </div>
 <?php else: ?>
     <?php
         $steps = ['pending' => 'Order Placed', 'paid' => 'Paid', 'shipped' => 'Shipped', 'completed' => 'Completed'];

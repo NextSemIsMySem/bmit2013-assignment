@@ -27,6 +27,7 @@ function create_order_from_cart(
     ?string $transactionReference = null
 ): int {
     $total = $subtotal - $discountAmount + $shippingFee;
+    $orderStatus = $paymentStatus === 'success' ? 'paid' : 'pending';
 
     $db->beginTransaction();
 
@@ -59,7 +60,7 @@ function create_order_from_cart(
             $address['state'],
             $address['postal_code'],
             $address['country'],
-            'paid',
+            $orderStatus,
         ]);
         $orderId = (int) $db->lastInsertId();
 
