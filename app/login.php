@@ -22,7 +22,7 @@ if (is_post()) {
 
         if ($u) {
             temp('info', 'Login successful.');
-            login($u, '/index.php');
+            login($u, $u->role === 'admin' ? '/admin/member/index.php' : '/index.php');
         } else {
             $_err['password'] = 'Invalid email or password'; // generic — don't reveal which
         }

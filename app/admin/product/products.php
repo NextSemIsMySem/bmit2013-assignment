@@ -35,6 +35,10 @@ $adminSearch = [
     'label' => 'Search products',
     'placeholder' => 'Search by product name...',
 ];
+$adminToolbarButton = [
+    'label' => '+ Add Product',
+    'url'   => 'product-create.php',
+];
 $adminActions = [
     [
         'label'  => 'Modify product',

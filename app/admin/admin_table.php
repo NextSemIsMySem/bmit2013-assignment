@@ -18,6 +18,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  * - $adminPaginate: set to true to show page-size and navigation controls
  * - $adminSearch: search form configuration with `name`, `label`, and `placeholder`
  *   (the including page owns the database query and chooses its table/field)
+ * - $adminToolbarButton: ['label' => 'Button text', 'url' => 'target.php'] rendered
+ *   on the right side of the search row (e.g. a "+ Add" link)
  */
 
 if (!isset($adminColumns, $adminRows, $adminActions)) {
@@ -29,6 +31,7 @@ $adminSort = req('sort');
 $adminDir = req('dir') === 'desc' ? 'desc' : 'asc';
 $adminPaginate ??= false;
 $adminSearch ??= null;
+$adminToolbarButton ??= null;
 
 if ($adminSearch) {
     $adminSearchName = $adminSearch['name'] ?? 'search';
@@ -71,24 +74,31 @@ if ($adminPaginate) {
 }
 ?>
 
-<?php if ($adminSearch): ?>
-    <form class="admin-table-search search-bar" method="get">
-        <?php foreach ($adminSearchParams as $key => $value): ?>
-            <?php if (!is_array($value)): ?>
-                <input type="hidden" name="<?= encode($key) ?>" value="<?= encode($value) ?>">
-            <?php endif; ?>
-        <?php endforeach; ?>
-        <label class="sr-only" for="admin-table-search"><?= encode($adminSearchLabel) ?></label>
-        <input
-            id="admin-table-search"
-            type="search"
-            name="<?= encode($adminSearchName) ?>"
-            value="<?= encode($adminSearchValue) ?>"
-            placeholder="<?= encode($adminSearchPlaceholder) ?>"
-        >
-        <button type="submit" aria-label="<?= encode($adminSearchLabel) ?>">&#128269;</button>
-        <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
-    </form>
+<?php if ($adminSearch || $adminToolbarButton): ?>
+    <div class="admin-table-toolbar">
+        <?php if ($adminSearch): ?>
+            <form class="admin-table-search search-bar" method="get">
+                <?php foreach ($adminSearchParams as $key => $value): ?>
+                    <?php if (!is_array($value)): ?>
+                        <input type="hidden" name="<?= encode($key) ?>" value="<?= encode($value) ?>">
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                <label class="sr-only" for="admin-table-search"><?= encode($adminSearchLabel) ?></label>
+                <input
+                    id="admin-table-search"
+                    type="search"
+                    name="<?= encode($adminSearchName) ?>"
+                    value="<?= encode($adminSearchValue) ?>"
+                    placeholder="<?= encode($adminSearchPlaceholder) ?>"
+                >
+                <button type="submit" aria-label="<?= encode($adminSearchLabel) ?>">&#128269;</button>
+                <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
+            </form>
+        <?php endif; ?>
+        <?php if ($adminToolbarButton): ?>
+            <a class="btn-green" href="<?= encode($adminToolbarButton['url']) ?>"><?= encode($adminToolbarButton['label']) ?></a>
+        <?php endif; ?>
+    </div>
 <?php endif; ?>
 
 <table class="admin-table">

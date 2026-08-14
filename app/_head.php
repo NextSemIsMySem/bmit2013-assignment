@@ -44,14 +44,17 @@
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
         <?php if ($_user?->role !== 'admin'): ?>
-        <a href="/product/category.php?category=dumbbells">Dumbbells</a>
-        <a href="/product/category.php?category=protein_powder">Protein Powder</a>
-        <a href="/product/category.php?category=supplements">Supplements</a>
-        <a href="/product/category.php?category=other">Others</a>
+        <a href="/product/category.php?category=dumbbells" class="<?= ($_GET['category'] ?? '') === 'dumbbells' ? 'active' : '' ?>">Dumbbells</a>
+        <a href="/product/category.php?category=protein_powder" class="<?= ($_GET['category'] ?? '') === 'protein_powder' ? 'active' : '' ?>">Protein Powder</a>
+        <a href="/product/category.php?category=supplements" class="<?= ($_GET['category'] ?? '') === 'supplements' ? 'active' : '' ?>">Supplements</a>
+        <a href="/product/category.php?category=other" class="<?= ($_GET['category'] ?? '') === 'other' ? 'active' : '' ?>">Others</a>
         <form id="search-form" class="search-bar" action="/product/search.php" method="get">
             <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
             <button type="submit" aria-label="Search">&#128269;</button>
         </form>
+        <a class="cart-button" href="/product/wishlist.php" aria-label="Wishlist">
+            <img src="/images/wishlist.png" alt="">
+        </a>
         <button class="cart-button" type="button" aria-label="Shopping cart">
             <img src="/images/cart.png" alt="">
         </button>
@@ -67,4 +70,6 @@
     <div id="info"><?= temp('info') ?></div>
 
     <main>
+        <?php if (empty($_hideHeading)): ?>
         <h1><?= $_title ?? 'Untitled' ?></h1>
+        <?php endif; ?>

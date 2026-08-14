@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes playwright --version)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\_head.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\product.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\category.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\wishlist.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\product_template.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\admin\\\\product\\\\products.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\admin\\\\admin_table.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\admin\\\\product\\\\product-create.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\reset.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\admin\\\\product\\\\product-update.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\user\\\\profile.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\index.php\")",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\search.php\")"
+    ]
+  }
+}

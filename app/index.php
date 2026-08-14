@@ -2,7 +2,9 @@
 require '_base.php';
 
 $products = $_db->query(
-    'SELECT product_id AS id, product_name AS name, price FROM product ORDER BY RAND() LIMIT 5'
+    'SELECT product_id AS id, product_name AS name, price,
+            (SELECT product_imageid FROM product_image WHERE product_id = product.product_id ORDER BY product_imageid LIMIT 1) AS image
+     FROM product WHERE availability = 1 AND stock > 0 ORDER BY RAND() LIMIT 5'
 )->fetchAll();
 
 $_title = 'Recommended Products';

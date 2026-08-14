@@ -64,9 +64,13 @@ function err($name) {
 // Form field helpers
 // ============================================================================
 
-function html_text($name, $label, $type = 'text') {
+function html_required_star() {
+    return ' <span class="required-star">*</span>';
+}
+
+function html_text($name, $label, $type = 'text', $required = false) {
     $value = encode(req($name));
-    echo '<label for="' . $name . '">' . encode($label) . '</label>';
+    echo '<label for="' . $name . '">' . encode($label) . ($required ? html_required_star() : '') . '</label>';
     echo '<input type="' . $type . '" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
     echo err($name);
 }
@@ -81,9 +85,9 @@ function html_file($key, $accept = '', $attr = '') {
     echo "<input type='file' id='$key' name='$key' accept='$accept' $attr>";
 }
 
-function html_select($name, $label, $options) {
+function html_select($name, $label, $options, $required = false) {
     $selected = req($name);
-    echo '<label for="' . $name . '">' . encode($label) . '</label>';
+    echo '<label for="' . $name . '">' . encode($label) . ($required ? html_required_star() : '') . '</label>';
     echo '<select id="' . $name . '" name="' . $name . '">';
     echo '<option value="">-- Please Select --</option>';
     foreach ($options as $value => $text) {
@@ -201,7 +205,7 @@ function get_file($key) {
 
 function save_photo($f, $folder = null, $width = 200, $height = 200) {
     $folder ??= __DIR__ . '/photos';
-    $photo = uniqid() . '.jpg';
+    $photo = bin2hex(random_bytes(8)) . '.jpg';
     require_once __DIR__ . '/lib/SimpleImage.php';
     $img = new \claviska\SimpleImage();
     $img->fromFile($f->tmp_name)->thumbnail($width, $height)->toFile("$folder/$photo", 'image/jpeg');
