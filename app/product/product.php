@@ -24,6 +24,7 @@ if ($id) {
 }
 
 $isWishlisted = false;
+$productImages = [];
 if ($product && $_user) {
     $wishlistCheck = $_db->prepare(
         'SELECT 1 FROM wishlist_item WHERE user_id = ? AND product_id = ?'
@@ -32,13 +33,49 @@ if ($product && $_user) {
     $isWishlisted = (bool) $wishlistCheck->fetchColumn();
 }
 
+if ($product) {
+    $imagesStmt = $_db->prepare(
+        'SELECT product_imageid FROM product_image WHERE product_id = ? ORDER BY product_imageid'
+    );
+    $imagesStmt->execute([$product->product_id]);
+    $productImages = array_column($imagesStmt->fetchAll(), 'product_imageid');
+}
+
+$mainImage = $productImages ? '/photos/' . htmlspecialchars($productImages[0]) : '/images/sport.png';
+$isBlocked = !$product || !$product->availability;
+
 $_title = $product ? $product->product_name : 'Product Not Found';
+$_hideHeading = true;
 include '../_head.php';
 ?>
 
-<?php if ($product): ?>
+<?php if ($product && !$isBlocked): ?>
     <article class="product-detail">
-        <img src="/images/sport.png" alt="<?= htmlspecialchars($product->product_name) ?>">
+        <div class="product-detail-gallery">
+            <div class="product-detail-main">
+                <img id="product-main-image" src="<?= $mainImage ?>" alt="<?= htmlspecialchars($product->product_name) ?>">
+            </div>
+            <?php if (count($productImages) > 1): ?>
+                <div class="product-detail-controls">
+                    <button type="button" class="product-detail-arrow product-detail-arrow--prev" id="product-image-prev" aria-label="Previous picture">&lt;</button>
+                    <span class="product-detail-counter" id="product-image-counter">1/<?= count($productImages) ?></span>
+                    <button type="button" class="product-detail-arrow product-detail-arrow--next" id="product-image-next" aria-label="Next picture">&gt;</button>
+                </div>
+            <?php endif; ?>
+            <?php if (count($productImages) > 1): ?>
+                <div class="product-detail-thumbs">
+                    <?php foreach ($productImages as $image): ?>
+                        <button
+                            type="button"
+                            class="product-detail-thumb"
+                            data-image="/photos/<?= htmlspecialchars($image) ?>"
+                        >
+                            <img src="/photos/<?= htmlspecialchars($image) ?>" alt="">
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
 
         <section class="product-detail-content">
             <div class="product-detail-title">
@@ -131,8 +168,11 @@ include '../_head.php';
             </p>
         </section>
     </article>
-<?php else: ?>
-    <p>The requested product could not be found.</p>
 <?php endif; ?>
+
+<dialog id="product-unavailable-dialog" data-redirect="<?= $isBlocked ? '1' : '' ?>" aria-labelledby="product-unavailable-message">
+    <p id="product-unavailable-message">Sorry, this product is unavailable.</p>
+    <button type="button" id="product-unavailable-confirm">OK</button>
+</dialog>
 
 <?php include '../_foot.php'; ?>

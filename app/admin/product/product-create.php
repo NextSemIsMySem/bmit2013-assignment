@@ -2,15 +2,6 @@
 require '../../_base.php';
 auth('admin');
 
-$id = req('id');
-$stmt = $_db->prepare('SELECT * FROM product WHERE product_id = ?');
-$stmt->execute([$id]);
-$product = $stmt->fetch();
-
-if (!$product) {
-    redirect('products.php');
-}
-
 $categories = $_db->query('SELECT category_id, name FROM category ORDER BY name')->fetchAll();
 $categoryOptions = [];
 foreach ($categories as $category) {
@@ -18,9 +9,6 @@ foreach ($categories as $category) {
 }
 
 $maxImages = 3;
-$stmt = $_db->prepare('SELECT product_imageid FROM product_image WHERE product_id = ? ORDER BY product_imageid DESC');
-$stmt->execute([$product->product_id]);
-$images = $stmt->fetchAll();
 
 if (is_post()) {
     $categoryId = req('category_id');
@@ -84,10 +72,10 @@ if (is_post()) {
         }
     }
 
-    if (count($images) + count($selectedFiles) < 1) {
+    if (count($selectedFiles) < 1) {
         $_err['photo'] = 'Please add at least one picture.';
-    } elseif (count($images) + count($selectedFiles) > $maxImages) {
-        $_err['photo'] = "You can only have up to $maxImages pictures per product.";
+    } elseif (count($selectedFiles) > $maxImages) {
+        $_err['photo'] = "You can only add up to $maxImages pictures per product.";
     } else {
         foreach ($selectedFiles as $file) {
             if ($file->error !== UPLOAD_ERR_OK) {
@@ -111,9 +99,8 @@ if (is_post()) {
 
     if (!$_err) {
         $stmt = $_db->prepare(
-            'UPDATE product
-             SET category_id = ?, product_name = ?, price = ?, weight = ?, description = ?, stock = ?, availability = ?
-             WHERE product_id = ?'
+            'INSERT INTO product (category_id, product_name, price, weight, description, stock, availability)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $categoryId,
@@ -123,29 +110,21 @@ if (is_post()) {
             $description,
             $stock,
             $availability,
-            $id,
         ]);
+
+        $newProductId = $_db->lastInsertId();
 
         foreach ($newPhotos as $photo) {
             $stmt = $_db->prepare('INSERT INTO product_image (product_id, product_imageid) VALUES (?, ?)');
-            $stmt->execute([$id, $photo]);
+            $stmt->execute([$newProductId, $photo]);
         }
 
-        temp('info', 'Product updated.');
+        temp('info', 'Product added.');
         redirect('products.php');
     }
-} else {
-    // Pre-fill sticky form fields from the DB on first (GET) load.
-    $_REQUEST['category_id'] = $product->category_id;
-    $_REQUEST['product_name'] = $product->product_name;
-    $_REQUEST['price'] = $product->price;
-    $_REQUEST['weight'] = $product->weight;
-    $_REQUEST['description'] = $product->description;
-    $_REQUEST['stock'] = $product->stock;
-    $_REQUEST['availability'] = (string) (int) $product->availability;
 }
 
-$_title = 'Update Product';
+$_title = 'Add Product';
 include '../../_head.php';
 ?>
 
@@ -155,36 +134,16 @@ include '../../_head.php';
     <?php html_text('price', 'Price (RM)', 'text', true); ?>
     <?php html_text('weight', 'Weight (kg)', 'text', true); ?>
     <label for="description">Description <span class="required-star">*</span></label>
-    <button type="button" class="btn-dark" id="description-button">Modify Description</button>
+    <button type="button" class="btn-dark" id="description-button">Insert Description</button>
     <textarea id="description" name="description" hidden><?= encode(req('description')) ?></textarea>
     <?= err('description') ?>
     <?php html_text('stock', 'Stock', 'text', true); ?>
     <?php html_select('availability', 'Availability', ['1' => 'Available', '0' => 'Unavailable'], true); ?>
     <section class="product-image-field">
         <label>Pictures <span class="required-star">*</span></label>
-        <div class="product-image-list" id="product-image-list" data-max-images="<?= $maxImages ?>">
-            <?php foreach ($images as $image): ?>
-                <figure class="product-image-list__item">
-                    <img src="/photos/<?= encode($image->product_imageid) ?>" alt="">
-                    <button
-                        type="button"
-                        class="round-delete-button"
-                        data-post="product-image-delete.php?id=<?= encode($product->product_id) ?>&image=<?= encode($image->product_imageid) ?>"
-                        data-confirm="Remove this picture?"
-                        aria-label="Remove picture"
-                        title="Remove picture"
-                    >
-                        <img src="/images/delete.png" alt="">
-                    </button>
-                </figure>
-            <?php endforeach; ?>
-        </div>
-        <?php if (count($images) < $maxImages): ?>
-            <button type="button" class="btn-dark" id="add-picture-button">Add Picture</button>
-            <input type="file" id="photo" name="photos[]" accept="image/*" multiple hidden>
-        <?php else: ?>
-            <p class="field-note">Maximum pictures reached. Remove a photo to insert new ones.</p>
-        <?php endif; ?>
+        <div class="product-image-list" id="product-image-list" data-max-images="<?= $maxImages ?>"></div>
+        <button type="button" class="btn-dark" id="add-picture-button">Add Picture</button>
+        <input type="file" id="photo" name="photos[]" accept="image/*" multiple hidden>
         <?= err('photo') ?>
     </section>
     <section class="buttons">

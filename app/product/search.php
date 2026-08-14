@@ -30,23 +30,25 @@ $resultGroups = [
 $seenIds = [];
 
 if ($searchTerms) {
+    $imageSubquery = '(SELECT product_imageid FROM product_image WHERE product_id = product.product_id ORDER BY product_imageid LIMIT 1) AS image';
+
     $queries = [
-        'exact' => 'SELECT product_id AS id, product_name AS name, price
+        'exact' => "SELECT product_id AS id, product_name AS name, price, stock, $imageSubquery
                     FROM product
-                    WHERE product_name = ?
-                    ORDER BY product_name',
-        'starts' => 'SELECT product_id AS id, product_name AS name, price
+                    WHERE product_name = ? AND availability = 1
+                    ORDER BY product_name",
+        'starts' => "SELECT product_id AS id, product_name AS name, price, stock, $imageSubquery
                      FROM product
-                     WHERE LEFT(product_name, CHAR_LENGTH(?)) = ?
-                     ORDER BY product_name',
-        'ends' => 'SELECT product_id AS id, product_name AS name, price
+                     WHERE LEFT(product_name, CHAR_LENGTH(?)) = ? AND availability = 1
+                     ORDER BY product_name",
+        'ends' => "SELECT product_id AS id, product_name AS name, price, stock, $imageSubquery
                    FROM product
-                   WHERE RIGHT(product_name, CHAR_LENGTH(?)) = ?
-                   ORDER BY product_name',
-        'contains' => 'SELECT product_id AS id, product_name AS name, price
+                   WHERE RIGHT(product_name, CHAR_LENGTH(?)) = ? AND availability = 1
+                   ORDER BY product_name",
+        'contains' => "SELECT product_id AS id, product_name AS name, price, stock, $imageSubquery
                        FROM product
-                       WHERE LOCATE(?, product_name) > 0
-                       ORDER BY product_name',
+                       WHERE LOCATE(?, product_name) > 0 AND availability = 1
+                       ORDER BY product_name",
     ];
 
     foreach ($queries as $group => $sql) {
