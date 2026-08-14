@@ -117,15 +117,24 @@ if ($adminPaginate) {
         <tr>
             <?php foreach ($adminColumns as $field => $label): ?>
                 <?php
-                    $nextDir = ($adminSort === $field && $adminDir === 'asc') ? 'desc' : 'asc';
+                    $isSortedField = $adminSort === $field;
                     $params = $_GET;
-                    $params['sort'] = $field;
-                    $params['dir'] = $nextDir;
                     unset($params['page']);
+
+                    if ($isSortedField && $adminDir === 'desc') {
+                        // Third click: back to neutral (no sort applied).
+                        unset($params['sort'], $params['dir']);
+                    } else {
+                        $params['sort'] = $field;
+                        $params['dir'] = ($isSortedField && $adminDir === 'asc') ? 'desc' : 'asc';
+                    }
                 ?>
                 <th>
                     <a href="?<?= encode(http_build_query($params)) ?>">
                         <?= encode($label) ?>
+                        <?php if ($isSortedField): ?>
+                            <?= $adminDir === 'asc' ? '🔼' : '🔽' ?>
+                        <?php endif; ?>
                     </a>
                 </th>
             <?php endforeach; ?>

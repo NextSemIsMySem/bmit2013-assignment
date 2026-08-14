@@ -15,7 +15,24 @@
       "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\admin\\\\product\\\\product-update.php\")",
       "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\user\\\\profile.php\")",
       "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\index.php\")",
-      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\search.php\")"
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -l \"c:\\\\Users\\\\User\\\\Documents\\\\Jul2426 test\\\\bmit2013-assignment\\\\app\\\\product\\\\search.php\")",
+      "Bash(git fetch *)",
+      "Bash(gh --version)",
+      "Bash(git ls-remote *)",
+      "Bash(curl -s \"https://api.github.com/repos/NextSemIsMySem/bmit2013-assignment/pulls?state=open\")",
+      "Bash(curl -s \"https://api.github.com/repos/NextSemIsMySem/bmit2013-assignment/pulls/20\")",
+      "Bash(curl -s \"https://api.github.com/repos/NextSemIsMySem/bmit2013-assignment/pulls/20/files?per_page=100\")",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(sed -n '/\\\\/\\\\* Cart/,$p')",
+      "Read(//tmp/**)",
+      "Bash(sed -n '/Wishlist remove confirmation/,$p')",
+      "Bash(grep -n \"INSERT INTO \\\\`product\\\\`\\\\|INSERT INTO \\\\`category\\\\`\\\\|INSERT INTO product\\\\b\\\\|INSERT INTO category\\\\b\" \"c:/Users/User/Documents/Jul2426 test/bmit2013-assignment/fitnessdb.sql\")",
+      "Bash(powershell.exe -Command '& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -h localhost -u root fitnessdb -e \"SELECT COUNT\\(*\\) AS user_count FROM user; SHOW TABLES;\"')",
+      "Bash(powershell.exe -Command '& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -h localhost -u root fitnessdb -e \"SELECT email, role FROM user WHERE role=\\\\\"admin\\\\\"; SELECT COUNT\\(*\\) AS pi FROM product_image; SELECT COUNT\\(*\\) AS ci FROM cart_item; SELECT COUNT\\(*\\) AS wi FROM wishlist_item;\"')",
+      "Bash(powershell.exe -Command '& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -h localhost -u root fitnessdb -e \"SELECT user_id, email, role FROM user WHERE role = ''admin'' LIMIT 5;\"')",
+      "Bash(\"/c/xampp/mysql/bin/mysql.exe\" -h localhost -u root fitnessdb)",
+      "Read(//c/Users/User/Downloads/**)"
     ]
   }
 }
