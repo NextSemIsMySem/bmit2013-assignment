@@ -18,13 +18,18 @@ array_key_exists($status, $statusTabs) || $status = '';
 
 $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT) ?: 1;
 
-$sql = 'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status, o.created_at
+$sql = 'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status, o.cancellation_requested_at, o.created_at
         FROM orders o
         WHERE o.user_id = ?';
 $params = [$_user->user_id];
 
-if ($status !== '') {
-    $sql .= ' AND o.status = ?';
+if ($status === 'cancelled') {
+    // Bucket pending cancellation requests in with confirmed cancellations —
+    // the order's real status hasn't changed yet, but from the member's view
+    // it's already "in" cancellation.
+    $sql .= " AND (o.status = 'cancelled' OR o.cancellation_requested_at IS NOT NULL)";
+} elseif ($status !== '') {
+    $sql .= ' AND o.status = ? AND o.cancellation_requested_at IS NULL';
     $params[] = $status;
 }
 
@@ -64,7 +69,7 @@ include '../_head.php';
                 <header class="order-card-header">
                     <span class="order-card-date"><?= encode(date('d M Y, g:ia', strtotime($order->created_at))) ?></span>
                     <span class="order-card-id">Order #<?= $order->order_id ?></span>
-                    <span class="order-status <?= order_status_class($order->status) ?>"><?= encode(order_status_label($order->status)) ?></span>
+                    <span class="order-status <?= order_display_class($order) ?>"><?= encode(order_display_label($order)) ?></span>
                 </header>
 
                 <div class="order-card-items">

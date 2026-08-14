@@ -131,7 +131,7 @@ if (is_post()) {
                     $discountAmount,
                     $subtotal,
                     $shippingFee,
-                    'success'
+                    'pending'
                 );
 
                 temp('info', 'Order placed successfully.');

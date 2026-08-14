@@ -227,3 +227,23 @@ function showInfo(message) {
         if (e.key === 'Escape') closeMenu();
     });
 })();
+
+// Cancel-order reason dialog
+(function () {
+    const openButton = document.getElementById('cancel-order-open');
+    const closeButton = document.getElementById('cancel-order-close');
+    const dialog = document.getElementById('cancel-order-dialog');
+    const othersRadio = document.getElementById('cancel-reason-others');
+    const reasonNote = document.getElementById('cancel-reason-note');
+
+    if (!dialog) return;
+
+    openButton?.addEventListener('click', () => dialog.showModal());
+    closeButton?.addEventListener('click', () => dialog.close());
+
+    dialog.querySelectorAll('input[name="reason"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            reasonNote.hidden = !othersRadio.checked;
+        });
+    });
+})();

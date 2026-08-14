@@ -110,6 +110,8 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `shipping_postal_code` VARCHAR(20) NOT NULL,
     `shipping_country` VARCHAR(100) NOT NULL,
     `status` ENUM('pending', 'paid', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    `cancellation_reason` VARCHAR(255) NULL DEFAULT NULL,
+    `cancellation_requested_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE RESTRICT,

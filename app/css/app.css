@@ -1311,10 +1311,12 @@ nav.pager span.current {
 }
 
 .order-tab:hover {
+    background: transparent;
     color: #1a1a2e;
 }
 
 .order-tab.active {
+    background: transparent;
     color: #e74c3c;
     border-bottom-color: #e74c3c;
 }
@@ -1384,6 +1386,11 @@ nav.pager span.current {
 .order-status--cancelled {
     color: #b91c1c;
     background: #fee2e2;
+}
+
+.order-status--requested {
+    color: #475569;
+    background: #e2e8f0;
 }
 
 .order-card-items {
@@ -1559,6 +1566,33 @@ nav.pager span.current {
     font-weight: 700;
 }
 
+.order-request-banner {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: #475569;
+    background: #e2e8f0;
+    font-weight: 700;
+}
+
+.order-cancel-button {
+    padding: 0 24px;
+    height: 42px;
+    border: 1px solid #c0392b;
+    border-radius: 6px;
+    color: #c0392b;
+    background: transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.order-cancel-button:hover {
+    color: #ffffff;
+    background: #c0392b;
+}
+
 .order-detail-info {
     margin-bottom: 20px;
     display: grid;
@@ -1632,4 +1666,94 @@ nav.pager span.current {
     .order-card-actions > * {
         flex: 1 1 0;
     }
+}
+
+/* Cancel-order reason dialog -------------------------------------------- */
+
+#cancel-order-dialog {
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    padding: 24px;
+    color: #1a1a2e;
+    background: #ffffff;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+#cancel-order-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+#cancel-order-dialog h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+
+#cancel-order-dialog > form > p {
+    margin: 0 0 16px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.cancel-reasons {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.cancel-reason-option {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #d7dbe5;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cancel-reason-option:hover {
+    border-color: #a0a8c0;
+}
+
+.cancel-reason-option:has(input:checked) {
+    border-color: #e74c3c;
+    background: #fdf1f0;
+}
+
+#cancel-order-dialog textarea {
+    width: 100%;
+    min-height: 70px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid #c9ccd6;
+    border-radius: 6px;
+    font: inherit;
+    resize: vertical;
+}
+
+#cancel-order-dialog .buttons button[type="submit"] {
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 6px;
+    color: #ffffff;
+    background: #e74c3c;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#cancel-order-dialog .buttons button[type="submit"]:hover {
+    background: #c0392b;
+}
+
+#cancel-order-dialog .buttons button[type="button"] {
+    padding: 10px 18px;
+    border: 1px solid #c9ccd6;
+    border-radius: 6px;
+    color: #1a1a2e;
+    background: transparent;
+    font-weight: 700;
+    cursor: pointer;
 }
