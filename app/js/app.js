@@ -138,6 +138,61 @@ document.querySelectorAll('[data-quantity-control]').forEach(control => {
     });
 });
 
+document.querySelectorAll('[data-cart-quantity]').forEach(control => {
+    const input = control.querySelector('.cart-quantity-value');
+    const minusButton = control.querySelector('[data-quantity-minus]');
+    const plusButton = control.querySelector('[data-quantity-plus]');
+    const productId = control.dataset.productId;
+    const cartItem = control.closest('[data-cart-item]');
+    const lineTotal = cartItem?.querySelector('[data-cart-line-total]');
+    const grandTotal = document.querySelector('[data-cart-grand-total]');
+
+    async function updateQuantity(newQuantity) {
+        if (newQuantity < 1) {
+            return;
+        }
+
+        minusButton.disabled = true;
+        plusButton.disabled = true;
+
+        try {
+            const response = await fetch('cart-update.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ product_id: productId, quantity: newQuantity }),
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Unable to update cart.');
+            }
+
+            input.value = result.quantity;
+            if (lineTotal) {
+                lineTotal.textContent = 'RM ' + result.lineTotal;
+            }
+            if (grandTotal) {
+                grandTotal.textContent = 'RM ' + result.cartSubtotal;
+            }
+            minusButton.disabled = result.atMin;
+            plusButton.disabled = result.atMax;
+            showInfo('Cart updated.');
+        } catch (error) {
+            minusButton.disabled = false;
+            plusButton.disabled = false;
+            showInfo(error.message || 'Unable to update cart.');
+        }
+    }
+
+    minusButton.addEventListener('click', () => {
+        updateQuantity(Number.parseInt(input.value, 10) - 1);
+    });
+
+    plusButton.addEventListener('click', () => {
+        updateQuantity(Number.parseInt(input.value, 10) + 1);
+    });
+});
+
 document.querySelectorAll('[data-favourite-star]').forEach(button => {
     button.addEventListener('click', async () => {
         const star = button.querySelector('img');
@@ -190,3 +245,60 @@ function showInfo(message) {
     void info.offsetWidth;
     info.style.animation = '';
 }
+
+// Profile menu toggle
+(function () {
+    const profileLink = document.getElementById('profile-link');
+    const profileMenu = document.getElementById('profile-menu');
+    if (!profileLink || !profileMenu) return;
+
+    function closeMenu() {
+        profileMenu.classList.remove('open');
+        profileMenu.setAttribute('aria-hidden', 'true');
+        profileLink.setAttribute('aria-expanded', 'false');
+    }
+
+    function openMenu() {
+        profileMenu.classList.add('open');
+        profileMenu.setAttribute('aria-hidden', 'false');
+        profileLink.setAttribute('aria-expanded', 'true');
+    }
+
+    profileLink.addEventListener('click', function (e) {
+        // prevent normal navigation; toggle menu instead
+        e.preventDefault();
+        if (profileMenu.classList.contains('open')) closeMenu(); else openMenu();
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!profileMenu.contains(e.target) && !profileLink.contains(e.target)) {
+            closeMenu();
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMenu();
+    });
+})();
+
+// Cancel-order reason dialog
+(function () {
+    const openButton = document.getElementById('cancel-order-open');
+    const closeButton = document.getElementById('cancel-order-close');
+    const dialog = document.getElementById('cancel-order-dialog');
+    const othersRadio = document.getElementById('cancel-reason-others');
+    const reasonNote = document.getElementById('cancel-reason-note');
+
+    if (!dialog) return;
+
+    openButton?.addEventListener('click', () => dialog.showModal());
+    closeButton?.addEventListener('click', () => dialog.close());
+
+    dialog.querySelectorAll('input[name="reason"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            reasonNote.hidden = !othersRadio.checked;
+        });
+    });
+})();
