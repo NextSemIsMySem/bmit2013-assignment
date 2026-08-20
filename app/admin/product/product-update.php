@@ -131,7 +131,20 @@ if (is_post()) {
             $stmt->execute([$id, $photo]);
         }
 
+        if ((int) $stock <= 0) {
+            // Back to 0 stock — clear the "already notified" flag so a future
+            // restock notifies these users again instead of staying silent.
+            $resetShown = $_db->prepare('UPDATE stock_reminder SET shown = 0 WHERE product_id = ?');
+            $resetShown->execute([$id]);
+        }
+
         temp('info', 'Product updated.');
+
+        if ((int) $stock > 0 && (int) $stock !== (int) $product->stock && $availability === '0') {
+            temp('activate_prompt', ['id' => $id, 'name' => $name]);
+            redirect('product-update.php?id=' . $id);
+        }
+
         redirect('products.php');
     }
 } else {

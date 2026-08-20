@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS `wishlist_item` (
 CREATE TABLE IF NOT EXISTS `voucher` (
     `voucher_id` INT AUTO_INCREMENT PRIMARY KEY,
     `code` VARCHAR(50) NOT NULL UNIQUE,
+    `category_id` INT NULL,
     `discount_type` ENUM('fixed', 'percentage') NOT NULL DEFAULT 'fixed',
     `discount_value` DECIMAL(10,2) NULL,
     `discount_percentage` DECIMAL(5,2) NULL,
@@ -93,7 +94,8 @@ CREATE TABLE IF NOT EXISTS `voucher` (
     `end_date` DATETIME NOT NULL,
     `status` ENUM('active', 'used', 'expired') NOT NULL DEFAULT 'active',
     `used_at` DATETIME NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`category_id`) REFERENCES `category`(`category_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- 9. Order Table
@@ -140,4 +142,14 @@ CREATE TABLE IF NOT EXISTS `payment` (
     `transaction_reference` VARCHAR(255) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 12. StockReminder Table
+CREATE TABLE IF NOT EXISTS `stock_reminder` (
+    `user_id` INT NOT NULL,
+    `product_id` INT NOT NULL,
+    `shown` BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (`user_id`, `product_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;

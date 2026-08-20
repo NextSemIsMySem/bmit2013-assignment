@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $_title ?? 'Untitled' ?></title>
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
     <link rel="icon" href="data:,">
     <link rel="shortcut icon" href="data:,">
     <script>const isLoggedIn = <?= $_user ? 'true' : 'false' ?>;</script>
@@ -13,7 +13,7 @@
 <body>
     <header>
         <div class="title">
-            <a href="/">
+            <a href="<?= $_user?->role === 'admin' ? '/admin/member/index.php' : '/' ?>">
                 <img class="sport" src="/images/sport.png" alt="Logo">
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
@@ -38,14 +38,15 @@
     </header>
 
     <nav>
+        <?php $reminders = []; $newRestocks = []; ?>
         <?php if (($_navSection ?? null) === 'profile'): ?>
         <a href="/user/profile.php">Profile</a>
         <a href="/user/password.php">Password</a>
         <?php else: ?>
-        <a href="/index.php">Home</a>
         <?php if ($_user?->role === 'admin'): ?>
         <a href="/admin/member/index.php">Members</a>
         <a href="/admin/product/products.php">Products</a>
+        <a href="/admin/voucher/vouchers.php">Vouchers</a>
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
         <?php if ($_user?->role !== 'admin'): ?>
@@ -58,6 +59,71 @@
             <input id="search-input" type="search" name="name" placeholder="Search products..." aria-label="Search products">
             <button type="submit" aria-label="Search">&#128269;</button>
         </form>
+        <?php
+            $reminders = [];
+            $newRestocks = [];
+            if ($_user) {
+                $reminderStmt = $_db->prepare(
+                    'SELECT p.product_id AS id, p.product_name AS name, sr.shown,
+                            (SELECT product_imageid FROM product_image WHERE product_id = p.product_id ORDER BY product_imageid LIMIT 1) AS image
+                     FROM stock_reminder sr
+                     JOIN product p ON p.product_id = sr.product_id
+                     WHERE sr.user_id = ? AND p.stock > 0 AND p.availability = 1
+                     ORDER BY p.product_name ASC'
+                );
+                $reminderStmt->execute([$_user->user_id]);
+                $reminders = $reminderStmt->fetchAll();
+
+                $newRestocks = array_filter($reminders, fn($r) => !$r->shown);
+                if ($newRestocks) {
+                    $markShown = $_db->prepare('UPDATE stock_reminder SET shown = 1 WHERE user_id = ? AND product_id = ?');
+                    foreach ($newRestocks as $restock) {
+                        $markShown->execute([$_user->user_id, $restock->id]);
+                    }
+                }
+            }
+            $reminderCount = count($reminders);
+        ?>
+        <div class="notify-wrapper">
+            <button
+                type="button"
+                class="cart-button"
+                id="notify-toggle"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Reminders (<?= $reminderCount ?> back in stock)"
+            >
+                <img class="notify-icon" src="/images/notify.png" alt="">
+                <?php if ($reminderCount > 0): ?>
+                    <span class="cart-badge"><?= $reminderCount ?></span>
+                <?php endif; ?>
+            </button>
+            <div class="notify-dropdown" id="notify-dropdown" hidden>
+                <?php if ($reminders): ?>
+                    <ul class="reminder-list">
+                        <?php foreach ($reminders as $reminderProduct): ?>
+                            <li class="reminder-list__item" data-product-id="<?= htmlspecialchars($reminderProduct->id) ?>">
+                                <img
+                                    class="reminder-list__photo"
+                                    src="<?= !empty($reminderProduct->image) ? '/photos/' . htmlspecialchars($reminderProduct->image) : '/images/sport.png' ?>"
+                                    alt=""
+                                >
+                                <div class="reminder-list__content">
+                                    <p>
+                                        <strong><?= htmlspecialchars($reminderProduct->name) ?></strong>
+                                        is back in stock! Quickly buy now.
+                                    </p>
+                                    <a class="btn-green" href="/product/product.php?id=<?= htmlspecialchars($reminderProduct->id) ?>">Check it Out</a>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <a href="/product/reminders.php" class="notify-dropdown__show-all">Show All</a>
+                <?php else: ?>
+                    <p class="notify-dropdown__empty">You don't have any stock reminders yet.</p>
+                <?php endif; ?>
+            </div>
+        </div>
         <a class="cart-button" href="/product/wishlist.php" aria-label="Wishlist">
             <img src="/images/wishlist.png" alt="">
         </a>
@@ -87,6 +153,45 @@
         <p id="search-empty-message">Please enter a product name.</p>
         <button id="search-empty-close" type="button">OK</button>
     </dialog>
+
+    <?php $activatePrompt = temp('activate_prompt'); ?>
+    <?php if ($activatePrompt): ?>
+        <dialog id="activate-prompt-dialog" aria-labelledby="activate-prompt-message">
+            <p id="activate-prompt-message">
+                <?= htmlspecialchars($activatePrompt['name']) ?> is still marked unavailable. Make it available now?
+            </p>
+            <div class="activate-prompt-actions">
+                <form method="post" action="/admin/product/product-activate.php">
+                    <input type="hidden" name="id" value="<?= htmlspecialchars($activatePrompt['id']) ?>">
+                    <button type="submit" class="btn-green">Yes</button>
+                </form>
+                <button type="button" class="btn-red" data-get="/admin/product/products.php">No</button>
+            </div>
+        </dialog>
+    <?php endif; ?>
+
+    <?php if ($newRestocks): ?>
+        <dialog id="restock-alert-dialog" aria-labelledby="restock-alert-message">
+            <p id="restock-alert-message">
+                <?php if (count($newRestocks) === 1): ?>
+                    <?= htmlspecialchars(reset($newRestocks)->name) ?> is back in stock! Quickly buy now.
+                <?php else: ?>
+                    Multiple items have been restocked!
+                <?php endif; ?>
+            </p>
+            <?php if (count($newRestocks) === 1): ?>
+                <div class="restock-alert-actions">
+                    <a class="btn-green" href="/product/product.php?id=<?= htmlspecialchars(reset($newRestocks)->id) ?>">Check It Out</a>
+                    <button id="restock-alert-close" class="btn-red" type="button">Later</button>
+                </div>
+            <?php else: ?>
+                <div class="restock-alert-actions">
+                    <a class="btn-green" href="/product/reminders.php">Check Reminder</a>
+                    <button id="restock-alert-close" class="btn-red" type="button">Later</button>
+                </div>
+            <?php endif; ?>
+        </dialog>
+    <?php endif; ?>
 
     <div id="info"><?= temp('info') ?></div>
 

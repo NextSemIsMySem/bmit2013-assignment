@@ -3,13 +3,15 @@ require '../../_base.php';
 auth('admin');
 
 $fields = [
-    'product_name' => 'Product Name',
-    'price'        => 'Price',
-    'stock'        => 'Stock',
+    'product_name'  => 'Product Name',
+    'price'         => 'Price',
+    'stock'         => 'Stock',
 ];
 
+$sortableFields = ['product_name', 'price', 'stock'];
+
 $sort = req('sort', 'product_name');
-array_key_exists($sort, $fields) || $sort = 'product_name';
+in_array($sort, $sortableFields, true) || $sort = 'product_name';
 
 $dir = req('dir', 'asc');
 in_array($dir, ['asc', 'desc'], true) || $dir = 'asc';
@@ -24,6 +26,20 @@ $stmt = $_db->prepare(
 $stmt->execute(["%$name%"]);
 $products = $stmt->fetchAll();
 
+$hasOutOfStock = (bool) $_db->query('SELECT 1 FROM product WHERE stock <= 0 LIMIT 1')->fetchColumn();
+
+foreach ($products as $product) {
+    if ($product->stock <= 0) {
+        $product->stock_alert = 'redalert.png';
+        $product->stock_alert_label = 'Out of Stock';
+    } elseif ($product->stock < 20) {
+        $product->stock_alert = 'yellowalert.png';
+        $product->stock_alert_label = 'Low Stock';
+    } else {
+        $product->stock_alert = null;
+    }
+}
+
 $_title = 'Manage Products';
 include '../../_head.php';
 
@@ -35,10 +51,13 @@ $adminSearch = [
     'label' => 'Search products',
     'placeholder' => 'Search by product name...',
 ];
-$adminToolbarButton = [
-    'label' => '+ Add Product',
-    'url'   => 'product-create.php',
+$adminToolbarButtons = [
+    ['label' => '+ Add Product', 'url' => 'product-create.php'],
 ];
+if ($hasOutOfStock) {
+    $adminToolbarButtons[] = ['label' => 'Out Of Stock', 'url' => 'outofstock.php', 'icon' => 'redalert.png', 'class' => 'btn-red'];
+}
+$adminInlineIcon = ['column' => 'product_name', 'field' => 'stock_alert', 'label_field' => 'stock_alert_label'];
 $adminActions = [
     [
         'label'  => 'Modify product',

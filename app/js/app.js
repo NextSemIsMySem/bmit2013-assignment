@@ -2,6 +2,37 @@
 // General Functions
 // ============================================================================
 
+const toggleFields = document.querySelectorAll('[data-toggle-target]');
+
+const setToggleTarget = (selector, visible) => {
+    if (!selector) {
+        return;
+    }
+
+    document.querySelectorAll(selector).forEach(target => {
+        target.hidden = !visible;
+        target.querySelectorAll('input, select, textarea').forEach(field => {
+            field.disabled = !visible;
+        });
+        if (target.matches('input, select, textarea')) {
+            target.disabled = !visible;
+        }
+    });
+};
+
+const syncToggleFields = () => {
+    toggleFields.forEach(toggle => {
+        setToggleTarget(toggle.dataset.toggleTarget, toggle.checked);
+
+        if (toggle.dataset.toggleTargetOff) {
+            setToggleTarget(toggle.dataset.toggleTargetOff, !toggle.checked);
+        }
+    });
+};
+
+syncToggleFields();
+toggleFields.forEach(toggle => toggle.addEventListener('change', syncToggleFields));
+
 document.querySelectorAll('[data-login-required]').forEach(button => {
     button.addEventListener('click', event => {
         if (isLoggedIn) {
@@ -13,6 +44,39 @@ document.querySelectorAll('[data-login-required]').forEach(button => {
         window.location.assign('/login.php');
     }, true);
 });
+
+const notifyToggle = document.querySelector('#notify-toggle');
+const notifyDropdown = document.querySelector('#notify-dropdown');
+
+if (notifyToggle && notifyDropdown) {
+    const notifyWrapper = notifyToggle.closest('.notify-wrapper');
+
+    notifyToggle.addEventListener('click', event => {
+        event.stopPropagation();
+        const isOpen = !notifyDropdown.hidden;
+        notifyDropdown.hidden = isOpen;
+        notifyToggle.setAttribute('aria-expanded', String(!isOpen));
+
+        if (!isOpen && notifyWrapper) {
+            const wrapperRect = notifyWrapper.getBoundingClientRect();
+            const dropdownWidth = notifyDropdown.offsetWidth;
+            const margin = 12;
+            const idealLeft = wrapperRect.left + wrapperRect.width / 2 - dropdownWidth / 2;
+            const maxLeft = Math.max(margin, window.innerWidth - dropdownWidth - margin);
+            const clampedLeft = Math.min(Math.max(idealLeft, margin), maxLeft);
+
+            notifyDropdown.style.right = 'auto';
+            notifyDropdown.style.left = `${clampedLeft - wrapperRect.left}px`;
+        }
+    });
+
+    notifyDropdown.addEventListener('click', event => event.stopPropagation());
+
+    document.addEventListener('click', () => {
+        notifyDropdown.hidden = true;
+        notifyToggle.setAttribute('aria-expanded', 'false');
+    });
+}
 
 
 // ============================================================================
@@ -180,6 +244,22 @@ document.querySelectorAll('[data-quantity-control]').forEach(control => {
     });
 });
 
+document.querySelectorAll('[data-refill-stepper]').forEach(control => {
+    const input = control.querySelector('input[name="quantity"]');
+    const minusButton = control.querySelector('[data-refill-minus]');
+    const plusButton = control.querySelector('[data-refill-plus]');
+
+    minusButton.addEventListener('click', () => {
+        const quantity = Number.parseInt(input.value, 10) || 1;
+        input.value = Math.max(1, quantity - 1);
+    });
+
+    plusButton.addEventListener('click', () => {
+        const quantity = Number.parseInt(input.value, 10) || 1;
+        input.value = quantity + 1;
+    });
+});
+
 document.querySelectorAll('[data-cart-quantity]').forEach(control => {
     const input = control.querySelector('.cart-quantity-value');
     const minusButton = control.querySelector('[data-quantity-minus]');
@@ -337,6 +417,54 @@ if (wishlistConfirmDialog && wishlistConfirmRemove) {
     });
 }
 
+document.querySelectorAll('[data-stock-reminder-cancel]').forEach(button => {
+    button.addEventListener('click', async () => {
+        const card = button.closest('.reminder-list__item');
+
+        button.disabled = true;
+
+        try {
+            const response = await fetch('/product/stock-reminder-toggle.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ product_id: button.dataset.productId }),
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Unable to update reminder.');
+            }
+
+            if (card) {
+                card.classList.add('is-removing');
+                card.addEventListener('transitionend', () => {
+                    card.remove();
+
+                    const list = document.querySelector('#reminder-list');
+                    const emptyMessage = document.querySelector('#reminder-list-empty');
+                    if (list && emptyMessage && !list.querySelector('.reminder-list__item')) {
+                        list.hidden = true;
+                        emptyMessage.hidden = false;
+                    }
+                }, { once: true });
+            }
+
+            const badge = document.querySelector('#notify-toggle .cart-badge');
+            if (badge) {
+                const newCount = Math.max(0, Number.parseInt(badge.textContent, 10) - 1);
+                if (newCount === 0) {
+                    badge.remove();
+                } else {
+                    badge.textContent = newCount;
+                }
+            }
+        } catch (error) {
+            showInfo(error.message || 'Unable to update reminder.');
+            button.disabled = false;
+        }
+    });
+});
+
 const addPictureButton = document.querySelector('#add-picture-button');
 const addPictureInput = document.querySelector('#photo');
 const productImageList = document.querySelector('#product-image-list');
@@ -474,6 +602,60 @@ if (productUnavailableDialog?.dataset.redirect) {
         goBackFromUnavailableProduct();
     });
 }
+
+const restockAlertDialog = document.querySelector('#restock-alert-dialog');
+const restockAlertClose = document.querySelector('#restock-alert-close');
+
+restockAlertDialog?.showModal();
+restockAlertClose?.addEventListener('click', () => {
+    restockAlertDialog.close();
+});
+
+document.querySelector('#activate-prompt-dialog')?.showModal();
+
+const outofstockEmptyDialog = document.querySelector('#outofstock-empty-dialog');
+const outofstockEmptyConfirm = document.querySelector('#outofstock-empty-confirm');
+
+if (outofstockEmptyDialog?.dataset.redirect) {
+    outofstockEmptyDialog.showModal();
+
+    const redirectUrl = outofstockEmptyDialog.dataset.redirectUrl;
+    const redirectTimer = window.setTimeout(() => {
+        window.location.assign(redirectUrl);
+    }, 2500);
+
+    outofstockEmptyConfirm?.addEventListener('click', () => {
+        window.clearTimeout(redirectTimer);
+        window.location.assign(redirectUrl);
+    });
+}
+
+const stockReminderButton = document.querySelector('#stock-reminder-button');
+
+stockReminderButton?.addEventListener('click', async () => {
+    stockReminderButton.disabled = true;
+
+    try {
+        const response = await fetch('/product/stock-reminder-toggle.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ product_id: stockReminderButton.dataset.productId }),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Unable to update reminder.');
+        }
+
+        stockReminderButton.classList.toggle('remind-me-button--requested', result.reminded);
+        stockReminderButton.setAttribute('aria-pressed', String(result.reminded));
+        stockReminderButton.textContent = result.reminded ? 'Cancel Reminder' : 'Notify Me';
+    } catch (error) {
+        showInfo(error.message || 'Unable to update reminder.');
+    } finally {
+        stockReminderButton.disabled = false;
+    }
+});
 
 function showInfo(message) {
     const info = document.querySelector('#info');

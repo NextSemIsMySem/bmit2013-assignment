@@ -29,18 +29,18 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                         <img src="/images/delete.png" alt="">
                     </button>
                 <?php endif; ?>
-                <h2><?= htmlspecialchars($product->name) ?></h2>
+                <?php if ($isUnavailable): ?>
+                    <div class="product-card__overlay"><span>Unavailable</span></div>
+                <?php elseif ($isSoldOut): ?>
+                    <div class="product-card__overlay"><span>Sold Out</span></div>
+                <?php endif; ?>
                 <div class="product-card__photo">
                     <img
                         src="<?= !empty($product->image) ? '/photos/' . htmlspecialchars($product->image) : '/images/sport.png' ?>"
                         alt="<?= htmlspecialchars($product->name) ?>"
                     >
-                    <?php if ($isUnavailable): ?>
-                        <div class="product-card__photo-overlay"><span>Unavailable</span></div>
-                    <?php elseif ($isSoldOut): ?>
-                        <div class="product-card__photo-overlay"><span>Sold Out</span></div>
-                    <?php endif; ?>
                 </div>
+                <h2><?= htmlspecialchars($product->name) ?></h2>
                 <?php if (isset($product->price)): ?>
                     <p>RM <?= htmlspecialchars($product->price) ?></p>
                 <?php endif; ?>
