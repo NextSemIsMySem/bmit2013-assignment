@@ -18,8 +18,22 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  * - $adminPaginate: set to true to show page-size and navigation controls
  * - $adminSearch: search form configuration with `name`, `label`, and `placeholder`
  *   (the including page owns the database query and chooses its table/field)
- * - $adminToolbarButton: ['label' => 'Button text', 'url' => 'target.php'] rendered
- *   on the right side of the search row (e.g. a "+ Add" link)
+ * - $adminToolbarButtons: [['label' => 'Button text', 'url' => 'target.php',
+ *   'icon' => optional /images/ filename, 'class' => optional CSS class, defaults
+ *   to 'btn-green'], ...] rendered on the right side of the search row (e.g. a
+ *   "+ Add" link, or a link to a filtered view)
+ * - $adminIconColumns: field names that should render as an /images/ icon instead
+ *   of plain text. The row's `{field}` property holds the icon filename, and
+ *   `{field}_label` holds the accessible text (used for alt/title).
+ * - $adminInlineIcon: ['column' => 'field_name', 'field' => 'icon_field', 'label_field' => 'label_field']
+ *   renders a small icon next to an existing column's text (no separate column/header).
+ *   The icon is only shown when the row's `{field}` property is non-empty, so it can be
+ *   used for conditional badges (e.g. only flag low/out-of-stock rows).
+ * - $adminActionsRenderer: callable(row): string returning raw HTML for the Action
+ *   cell, used instead of the default $adminActions icon-button list when set
+ *   (pass $adminActions = [] in that case).
+ * - $adminActionsWidth: pixel width for the Action column, overriding the default
+ *   120px (useful when $adminActionsRenderer needs more room).
  */
 
 if (!isset($adminColumns, $adminRows, $adminActions)) {
@@ -31,7 +45,11 @@ $adminSort = req('sort');
 $adminDir = req('dir') === 'desc' ? 'desc' : 'asc';
 $adminPaginate ??= false;
 $adminSearch ??= null;
-$adminToolbarButton ??= null;
+$adminToolbarButtons ??= [];
+$adminIconColumns ??= [];
+$adminInlineIcon ??= null;
+$adminActionsRenderer ??= null;
+$adminActionsWidth ??= null;
 
 if ($adminSearch) {
     $adminSearchName = $adminSearch['name'] ?? 'search';
@@ -85,7 +103,7 @@ if ($adminPaginate) {
 }
 ?>
 
-<?php if ($adminSearch || $adminToolbarButton): ?>
+<?php if ($adminSearch || $adminToolbarButtons): ?>
     <div class="admin-table-toolbar">
         <?php if ($adminSearch): ?>
             <form class="admin-table-search search-bar" method="get">
@@ -106,8 +124,17 @@ if ($adminPaginate) {
                 <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
             </form>
         <?php endif; ?>
-        <?php if ($adminToolbarButton): ?>
-            <a class="btn-green" href="<?= encode($adminToolbarButton['url']) ?>"><?= encode($adminToolbarButton['label']) ?></a>
+        <?php if ($adminToolbarButtons): ?>
+            <div class="admin-table-toolbar-actions">
+                <?php foreach ($adminToolbarButtons as $button): ?>
+                    <a class="<?= encode($button['class'] ?? 'btn-green') ?>" href="<?= encode($button['url']) ?>">
+                        <?php if (!empty($button['icon'])): ?>
+                            <img class="admin-table-toolbar-actions__icon" src="/images/<?= encode($button['icon']) ?>" alt="">
+                        <?php endif; ?>
+                        <?= encode($button['label']) ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
     </div>
 <?php endif; ?>
@@ -130,15 +157,19 @@ if ($adminPaginate) {
                     }
                 ?>
                 <th>
-                    <a href="?<?= encode(http_build_query($params)) ?>">
+                    <?php if (in_array($field, $adminIconColumns, true)): ?>
                         <?= encode($label) ?>
-                        <?php if ($isSortedField): ?>
-                            <?= $adminDir === 'asc' ? '🔼' : '🔽' ?>
-                        <?php endif; ?>
-                    </a>
+                    <?php else: ?>
+                        <a href="?<?= encode(http_build_query($params)) ?>">
+                            <?= encode($label) ?>
+                            <?php if ($isSortedField): ?>
+                                <?= $adminDir === 'asc' ? '🔼' : '🔽' ?>
+                            <?php endif; ?>
+                        </a>
+                    <?php endif; ?>
                 </th>
             <?php endforeach; ?>
-            <th>Action</th>
+            <th class="admin-table__actions" <?php if ($adminActionsWidth): ?>style="width: <?= (int) $adminActionsWidth ?>px"<?php endif; ?>>Action</th>
         </tr>
     </thead>
     <tbody>
@@ -146,33 +177,59 @@ if ($adminPaginate) {
             <tr>
                 <?php foreach ($adminColumns as $field => $_): ?>
                     <?php $value = is_array($row) ? ($row[$field] ?? '') : ($row->$field ?? ''); ?>
-                    <td title="<?= encode($value) ?>"><?= encode($value) ?></td>
+                    <?php if (in_array($field, $adminIconColumns, true)): ?>
+                        <?php $iconLabel = is_array($row) ? ($row[$field . '_label'] ?? '') : ($row->{$field . '_label'} ?? ''); ?>
+                        <td>
+                            <img class="admin-table__status-icon" src="/images/<?= encode($value) ?>" alt="<?= encode($iconLabel) ?>" title="<?= encode($iconLabel) ?>">
+                        </td>
+                    <?php else: ?>
+                        <td title="<?= encode($value) ?>">
+                            <?= encode($value) ?>
+                            <?php if ($adminInlineIcon && $field === $adminInlineIcon['column']): ?>
+                                <?php
+                                    $inlineIconField = $adminInlineIcon['field'];
+                                    $inlineIconValue = is_array($row) ? ($row[$inlineIconField] ?? '') : ($row->$inlineIconField ?? '');
+                                ?>
+                                <?php if ($inlineIconValue): ?>
+                                    <?php
+                                        $inlineLabelField = $adminInlineIcon['label_field'];
+                                        $inlineIconLabel = is_array($row) ? ($row[$inlineLabelField] ?? '') : ($row->$inlineLabelField ?? '');
+                                    ?>
+                                    <img class="admin-table__status-icon admin-table__status-icon--inline" src="/images/<?= encode($inlineIconValue) ?>" alt="<?= encode($inlineIconLabel) ?>" title="<?= encode($inlineIconLabel) ?>">
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                    <?php endif; ?>
                 <?php endforeach; ?>
-                <td class="admin-table__actions">
-                    <?php foreach ($adminActions as $action): ?>
-                        <?php
-                            // Fields may be a plain value or a closure(row) for per-row state (e.g. disable/activate).
-                            $resolve = fn($value) => $value instanceof Closure ? $value($row) : $value;
+                <td class="admin-table__actions" <?php if ($adminActionsWidth): ?>style="width: <?= (int) $adminActionsWidth ?>px"<?php endif; ?>>
+                    <?php if ($adminActionsRenderer): ?>
+                        <?= $adminActionsRenderer($row) ?>
+                    <?php else: ?>
+                        <?php foreach ($adminActions as $action): ?>
+                            <?php
+                                // Fields may be a plain value or a closure(row) for per-row state (e.g. disable/activate).
+                                $resolve = fn($value) => $value instanceof Closure ? $value($row) : $value;
 
-                            $disabled = !empty($resolve($action['disabled'] ?? false));
-                            $url = $disabled ? null : $action['url']($row);
-                            $icon = $resolve($action['icon']);
-                            $label = $resolve($action['label']);
-                            $confirm = $resolve($action['confirm'] ?? null);
-                            $extraClass = $resolve($action['class'] ?? '');
-                        ?>
-                        <button
-                            type="button"
-                            class="admin-action-button<?= $extraClass ? ' ' . encode($extraClass) : '' ?>"
-                            <?php if (!$disabled): ?>data-<?= $action['method'] ?>="<?= encode($url) ?>"<?php endif; ?>
-                            <?php if ($confirm): ?>data-confirm="<?= encode($confirm) ?>"<?php endif; ?>
-                            <?= $disabled ? 'disabled' : '' ?>
-                            aria-label="<?= encode($label) ?>"
-                            title="<?= encode($label) ?>"
-                        >
-                            <img src="/images/<?= encode($icon) ?>" alt="">
-                        </button>
-                    <?php endforeach; ?>
+                                $disabled = !empty($resolve($action['disabled'] ?? false));
+                                $url = $disabled ? null : $action['url']($row);
+                                $icon = $resolve($action['icon']);
+                                $label = $resolve($action['label']);
+                                $confirm = $resolve($action['confirm'] ?? null);
+                                $extraClass = $resolve($action['class'] ?? '');
+                            ?>
+                            <button
+                                type="button"
+                                class="admin-action-button<?= $extraClass ? ' ' . encode($extraClass) : '' ?>"
+                                <?php if (!$disabled): ?>data-<?= $action['method'] ?>="<?= encode($url) ?>"<?php endif; ?>
+                                <?php if ($confirm): ?>data-confirm="<?= encode($confirm) ?>"<?php endif; ?>
+                                <?= $disabled ? 'disabled' : '' ?>
+                                aria-label="<?= encode($label) ?>"
+                                title="<?= encode($label) ?>"
+                            >
+                                <img src="/images/<?= encode($icon) ?>" alt="">
+                            </button>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>

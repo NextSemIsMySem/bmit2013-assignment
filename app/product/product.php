@@ -24,6 +24,7 @@ if ($id) {
 }
 
 $isWishlisted = false;
+$hasStockReminder = false;
 $productImages = [];
 if ($product && $_user) {
     $wishlistCheck = $_db->prepare(
@@ -31,6 +32,20 @@ if ($product && $_user) {
     );
     $wishlistCheck->execute([$_user->user_id, $product->product_id]);
     $isWishlisted = (bool) $wishlistCheck->fetchColumn();
+
+    if ($product->stock > 0 && $product->availability) {
+        // Viewing a restocked, available product clears any pending reminder for it.
+        $clearReminder = $_db->prepare(
+            'DELETE FROM stock_reminder WHERE user_id = ? AND product_id = ?'
+        );
+        $clearReminder->execute([$_user->user_id, $product->product_id]);
+    } else {
+        $reminderCheck = $_db->prepare(
+            'SELECT 1 FROM stock_reminder WHERE user_id = ? AND product_id = ?'
+        );
+        $reminderCheck->execute([$_user->user_id, $product->product_id]);
+        $hasStockReminder = (bool) $reminderCheck->fetchColumn();
+    }
 }
 
 if ($product) {
@@ -116,56 +131,55 @@ include '../_head.php';
                 <p class="out-of-stock">Out of stock.</p>
             <?php endif; ?>
 
-            <form
-                class="purchase-controls"
-                method="post"
-                action="/cart/cart-add.php"
-                data-quantity-control
-                data-stock="<?= htmlspecialchars($product->stock) ?>"
-            >
-                <input type="hidden" name="product_id" value="<?= htmlspecialchars($product->product_id) ?>">
-
-                <div class="quantity-box" aria-label="Product quantity">
-                    <button type="button" data-quantity-minus aria-label="Decrease quantity">−</button>
-                    <input
-                        type="number"
-                        name="quantity"
-                        value="<?= $product->stock > 0 ? 1 : 0 ?>"
-                        min="<?= $product->stock > 0 ? 1 : 0 ?>"
-                        max="<?= htmlspecialchars($product->stock) ?>"
-                        aria-label="Quantity"
-                        readonly
-                    >
-                    <button type="button" data-quantity-plus aria-label="Increase quantity">+</button>
-                </div>
-
+            <?php if ($product->stock < 1): ?>
                 <button
-                    class="purchase-button"
-                    type="submit"
-                    name="intent"
-                    value="checkout"
+                    type="button"
+                    id="stock-reminder-button"
+                    class="remind-me-button<?= $hasStockReminder ? ' remind-me-button--requested' : '' ?>"
                     data-login-required
-                    <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
+                    data-product-id="<?= htmlspecialchars($product->product_id) ?>"
+                    aria-pressed="<?= $hasStockReminder ? 'true' : 'false' ?>"
                 >
-                    Purchase
+                    <?= $hasStockReminder ? 'Cancel Reminder' : 'Notify Me' ?>
                 </button>
-
-                <button
-                    class="add-cart-button"
-                    type="submit"
-                    name="intent"
-                    value="cart"
-                    data-login-required
-                    <?= (!$product->availability || $product->stock < 1) ? 'disabled' : '' ?>
+            <?php else: ?>
+                <form
+                    class="purchase-controls"
+                    method="post"
+                    action="/cart/cart-add.php"
+                    data-quantity-control
+                    data-stock="<?= htmlspecialchars($product->stock) ?>"
                 >
-                    <img src="/images/cart.png" alt="">
-                    <span>Add to Cart</span>
-                </button>
-            </form>
+                    <input type="hidden" name="product_id" value="<?= htmlspecialchars($product->product_id) ?>">
 
-            <p class="quantity-warning" data-quantity-warning role="status" hidden>
-                Maximum amount you can buy reached.
-            </p>
+                    <div class="quantity-box" aria-label="Product quantity">
+                        <button type="button" data-quantity-minus aria-label="Decrease quantity">−</button>
+                        <input
+                            type="number"
+                            name="quantity"
+                            value="1"
+                            min="1"
+                            max="<?= htmlspecialchars($product->stock) ?>"
+                            aria-label="Quantity"
+                            readonly
+                        >
+                        <button type="button" data-quantity-plus aria-label="Increase quantity">+</button>
+                    </div>
+
+                    <button class="purchase-button" type="submit" name="intent" value="checkout" data-login-required>
+                        Purchase
+                    </button>
+
+                    <button class="add-cart-button" type="submit" name="intent" value="cart" data-login-required>
+                        <img src="/images/cart.png" alt="">
+                        <span>Add to Cart</span>
+                    </button>
+                </form>
+
+                <p class="quantity-warning" data-quantity-warning role="status" hidden>
+                    Maximum amount you can buy reached.
+                </p>
+            <?php endif; ?>
         </section>
     </article>
 <?php endif; ?>
