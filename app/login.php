@@ -2,13 +2,11 @@
 require '_base.php';
 
 if (is_post()) {
-    $email = req('email');
+    $identifier = req('identifier');
     $password = req('password');
 
-    if ($email === '') {
-        $_err['email'] = 'Email is required.';
-    } elseif (!is_email($email)) {
-        $_err['email'] = 'Please enter a valid email address.';
+    if ($identifier === '') {
+        $_err['identifier'] = 'Email or username is required.';
     }
 
     if ($password === '') {
@@ -16,8 +14,12 @@ if (is_post()) {
     }
 
     if (!$_err) {
-        $stm = $_db->prepare('SELECT * FROM user WHERE email = ? AND password = SHA1(?)');
-        $stm->execute([$email, $password]);
+        // A valid email is always treated as an email; every other identifier is a username.
+        $loginColumn = is_email($identifier) ? 'email' : 'username';
+        $stm = $_db->prepare(
+            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?)"
+        );
+        $stm->execute([$identifier, $password]);
         $u = $stm->fetch();
 
         if ($u) {
@@ -34,7 +36,7 @@ include '_head.php';
 ?>
 
 <form class="form" method="post">
-    <?php html_text('email', 'Email', 'email'); ?>
+    <?php html_text('identifier', 'Email or Username'); ?>
     <?php html_password('password', 'Password'); ?>
     <section class="buttons">
         <button type="submit">Login</button>

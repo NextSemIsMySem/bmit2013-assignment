@@ -24,7 +24,7 @@
                 </a>
                 <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
                     <a role="menuitem" href="/user/profile.php">Change Profile</a>
-                    <a role="menuitem" href="/user/password.php">Change Password</a>
+                    <a role="menuitem" href="/user/change-password.php">Change Password</a>
                     <a role="menuitem" href="/logout.php">Logout</a>
                 </div>
             <?php else: ?>
@@ -41,7 +41,7 @@
         <?php $reminders = []; $newRestocks = []; ?>
         <?php if (($_navSection ?? null) === 'profile'): ?>
         <a href="/user/profile.php">Profile</a>
-        <a href="/user/password.php">Password</a>
+        <a href="/user/change-password.php">Change Password</a>
         <?php else: ?>
         <?php if ($_user?->role === 'admin'): ?>
         <a href="/admin/member/index.php">Members</a>

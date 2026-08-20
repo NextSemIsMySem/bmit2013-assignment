@@ -5,6 +5,7 @@ if (is_post()) {
     $email    = req('email');
     $password = req('password');
     $confirm  = req('confirm');
+    $username = req('username');
     $name     = req('name');
     $f = get_file('photo');
 
@@ -46,15 +47,22 @@ if (is_post()) {
         $_err['confirm'] = 'Passwords do not match.';
     }
 
-    // Validate: name
-    if ($name === '') {
-        $_err['name'] = 'Name is required.';
-    } elseif (strlen($name) < 5) {
-        $_err['name'] = 'Name must be at least 5 characters.';
-    } elseif (!preg_match('/[A-Za-z]/', $name)) {
-        $_err['name'] = 'Name must contain alphabetic characters.';
-    } elseif (strlen($name) > 100) {
-        $_err['name'] = 'Maximum 100 characters.';
+    // Validate: username
+    if ($username === '') {
+        $_err['username'] = 'Username is required.';
+    } elseif (strlen($username) < 5) {
+        $_err['username'] = 'Username must be at least 5 characters.';
+    } elseif (!preg_match('/[A-Za-z]/', $username)) {
+        $_err['username'] = 'Username must contain alphabetic characters.';
+    } elseif (strlen($username) > 50) {
+        $_err['username'] = 'Username must be at most 50 characters.';
+    } elseif (!is_unique('user', 'username', $username)) {
+        $_err['username'] = 'Username is already registered.';
+    }
+
+    // Validate: display name
+    if (strlen($name) > 50) {
+        $_err['name'] = 'Display name must be at most 50 characters.';
     }
 
     // Validate: photo
@@ -82,9 +90,9 @@ if (is_post()) {
 
         // Insert user as Member
         $stm = $_db->prepare(
-            'INSERT INTO user (email, password, name, photo, role) VALUES (?, SHA1(?), ?, ?, "Member")'
+            'INSERT INTO user (email, username, password, name, photo, role) VALUES (?, ?, SHA1(?), ?, ?, "member")'
         );
-        $stm->execute([$email, $password, $name, $photo]);
+        $stm->execute([$email, $username, $password, $name, $photo]);
 
         temp('info', 'Registration successful. You may now log in.');
         redirect('/login.php');
@@ -97,6 +105,8 @@ include '../_head.php';
 
 <form method="post" class="form" enctype="multipart/form-data">
     <?php html_text('email', 'Email', 'email'); ?>
+
+    <?php html_text('username', 'Username'); ?>
 
     <?php html_password('password', 'Password'); ?>
 
@@ -113,7 +123,7 @@ include '../_head.php';
 
     <?php html_password('confirm', 'Confirm'); ?>
 
-    <?php html_text('name', 'Name'); ?>
+    <?php html_text('name', 'Display Name'); ?>
 
     <label for="photo">Photo</label>
     <label class="upload" tabindex="0">
