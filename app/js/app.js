@@ -14,6 +14,39 @@ document.querySelectorAll('[data-login-required]').forEach(button => {
     }, true);
 });
 
+document.querySelectorAll('[data-password-requirements]').forEach(requirementsBox => {
+    const passwordInput = document.getElementById(requirementsBox.dataset.passwordRequirements);
+    if (!passwordInput) {
+        return;
+    }
+
+    const checks = {
+        length: value => value.length >= 8 && value.length <= 50,
+        lower: value => /[a-z]/.test(value),
+        upper: value => /[A-Z]/.test(value),
+        number: value => /[0-9]/.test(value),
+        symbol: value => /[^a-zA-Z0-9]/.test(value),
+    };
+
+    function updatePasswordRequirements() {
+        const value = passwordInput.value || '';
+
+        Object.keys(checks).forEach(key => {
+            const requirement = requirementsBox.querySelector('[data-req="' + key + '"]');
+            if (!requirement) {
+                return;
+            }
+
+            const met = checks[key](value);
+            requirement.classList.toggle('met', met);
+            requirement.querySelector('.indicator').textContent = met ? '✓' : '✖';
+        });
+    }
+
+    passwordInput.addEventListener('input', updatePasswordRequirements);
+    updatePasswordRequirements();
+});
+
 
 // ============================================================================
 // Page Load (jQuery)

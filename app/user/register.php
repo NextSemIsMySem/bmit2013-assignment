@@ -100,7 +100,7 @@ include '../_head.php';
 
     <?php html_password('password', 'Password'); ?>
 
-    <div class="password-requirements" id="password-requirements">
+    <div class="password-requirements" data-password-requirements="password">
         <small>Password requirements:</small>
         <ul>
             <li data-req="length"><span class="indicator">✖</span> At least 8 characters (max 50)</li>
@@ -129,49 +129,3 @@ include '../_head.php';
 </form>
 
 <?php include '../_foot.php'; ?>
-
-<script>
-// Password requirements dynamic checker
-;(function () {
-    const init = () => {
-        const pw = document.getElementById('password');
-        const reqBox = document.getElementById('password-requirements');
-        if (!pw || !reqBox) return;
-
-        const checks = {
-            length: v => v.length >= 8 && v.length <= 50,
-            lower: v => /[a-z]/.test(v),
-            upper: v => /[A-Z]/.test(v),
-            number: v => /[0-9]/.test(v),
-            symbol: v => /[^a-zA-Z0-9]/.test(v),
-        };
-
-        function update() {
-            const v = pw.value || '';
-            Object.keys(checks).forEach(k => {
-                const li = reqBox.querySelector('[data-req="' + k + '"]');
-                if (!li) return;
-                if (checks[k](v)) {
-                    li.classList.add('met');
-                    li.querySelector('.indicator').textContent = '✓';
-                } else {
-                    li.classList.remove('met');
-                    li.querySelector('.indicator').textContent = '✖';
-                }
-            });
-        }
-
-        // Listen to several events to ensure live updates while typing/pasting
-        ['input', 'keyup', 'change', 'paste'].forEach(ev => pw.addEventListener(ev, update));
-
-        // init
-        update();
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-</script>
