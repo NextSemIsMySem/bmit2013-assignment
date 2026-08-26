@@ -78,8 +78,8 @@ if (is_post()) {
 
 $photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
 
-$_title = 'My Profile';
-$_navSection = 'profile';
+$_title = 'Profile Settings';
+$_navSection = 'settings';
 include '../_head.php';
 ?>
 

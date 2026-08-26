@@ -50,9 +50,10 @@ include '_head.php';
     <section class="buttons">
         <button type="submit">Login</button>
         <button type="reset">Reset</button>
-        <a href="/user/reset.php">Forgot password?</a>
     </section>
 </form>
+
+<p><a href="/user/reset.php">Forgot your password?</a></p>
 
 <?php
 include '_foot.php';

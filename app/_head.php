@@ -39,7 +39,7 @@
 
     <nav>
         <?php $reminders = []; $newRestocks = []; ?>
-        <?php if (($_navSection ?? null) === 'profile'): ?>
+        <?php if (($_navSection ?? null) === 'settings'): ?>
         <a href="/user/profile.php">Profile</a>
         <a href="/user/change-password.php">Change Password</a>
         <?php else: ?>

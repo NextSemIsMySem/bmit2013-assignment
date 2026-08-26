@@ -58,6 +58,7 @@ if (is_post()) {
 }
 
 $_title = 'Change Password';
+$_navSection = 'settings';
 include '../_head.php';
 ?>
 
