@@ -13,7 +13,7 @@
 <body>
     <header>
         <div class="title">
-            <a href="<?= $_user?->role === 'admin' ? '/admin/member/index.php' : '/' ?>">
+            <a href="<?= is_admin() ? '/admin/member/index.php' : '/' ?>">
                 <img class="sport" src="/images/sport.png" alt="Logo">
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
@@ -43,14 +43,17 @@
         <a href="/user/profile.php">Profile</a>
         <a href="/user/change-password.php">Change Password</a>
         <?php else: ?>
-        <?php if ($_user?->role === 'admin'): ?>
+        <?php if (is_admin()): ?>
+        <?php if ($_user?->role === 'superadmin'): ?>
+        <a href="/admin/administrator/index.php">Admins</a>
+        <?php endif; ?>
         <a href="/admin/member/index.php">Members</a>
         <a href="/admin/product/products.php">Products</a>
         <a href="/admin/voucher/vouchers.php">Vouchers</a>
         <a href="/admin/order/orders.php">Orders</a>
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
-        <?php if ($_user?->role !== 'admin'): ?>
+        <?php if (!is_admin()): ?>
         <a href="/product/category.php?category=dumbbells" class="<?= ($_GET['category'] ?? '') === 'dumbbells' ? 'active' : '' ?>">Dumbbells</a>
         <a href="/product/category.php?category=protein_powder" class="<?= ($_GET['category'] ?? '') === 'protein_powder' ? 'active' : '' ?>">Protein Powder</a>
         <a href="/product/category.php?category=supplements" class="<?= ($_GET['category'] ?? '') === 'supplements' ? 'active' : '' ?>">Supplements</a>

@@ -8,7 +8,7 @@ if (!is_post()) {
 
 $id = req('id');
 
-$stmt = $_db->prepare('UPDATE user SET active = 0 WHERE user_id = ?');
+$stmt = $_db->prepare("UPDATE user SET active = 0 WHERE user_id = ? AND role = 'member'");
 $stmt->execute([$id]);
 
 temp('info', 'Member disabled.');

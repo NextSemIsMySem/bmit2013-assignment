@@ -2,7 +2,7 @@
 require '_base.php';
 
 if ($_user) {
-    redirect($_user->role === 'admin' ? '/admin/member/index.php' : '/index.php');
+    redirect(is_admin() ? '/admin/member/index.php' : '/index.php');
 }
 
 if (is_post()) {

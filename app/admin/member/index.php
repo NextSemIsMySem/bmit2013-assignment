@@ -33,8 +33,11 @@ in_array($pageSize, $pageSizes, true) || $pageSize = 10;
 $page = (int) req('page', 1);
 $page < 1 && $page = 1;
 
+// The role filter must be parenthesised against the OR'd search terms,
+// otherwise AND/OR precedence lets admin accounts leak into the member list.
 $sql = "SELECT * FROM user
-        WHERE username LIKE ? OR name LIKE ? OR email LIKE ?
+        WHERE role = 'member'
+          AND (username LIKE ? OR name LIKE ? OR email LIKE ?)
         ORDER BY $sort $dir";
 $p = new SimplePager($sql, ["%$name%", "%$name%", "%$name%"], $pageSize, $page);
 

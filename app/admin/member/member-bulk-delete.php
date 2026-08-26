@@ -12,7 +12,7 @@ $deleted = 0;
 $skipped = 0;
 
 if ($ids) {
-    $stmt = $_db->prepare('DELETE FROM user WHERE user_id = ?');
+    $stmt = $_db->prepare("DELETE FROM user WHERE user_id = ? AND role = 'member'");
     foreach ($ids as $id) {
         if (is_exists('orders', 'user_id', $id)) {
             $skipped++;
