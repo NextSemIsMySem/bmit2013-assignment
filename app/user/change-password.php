@@ -19,22 +19,9 @@ if (is_post()) {
         }
     }
 
-    if ($new_password === '') {
-        $_err['new_password'] = 'New password is required.';
+    if ($pwError = password_error($new_password, 'New password')) {
+        $_err['new_password'] = $pwError;
         $newPasswordFailed = true;
-    } elseif (strlen($new_password) < 8 || strlen($new_password) > 50) {
-        $_err['new_password'] = 'New password must be between 8-50 characters.';
-        $newPasswordFailed = true;
-    } else {
-        $pw_ok = preg_match('/[a-z]/', $new_password)
-            && preg_match('/[A-Z]/', $new_password)
-            && preg_match('/[0-9]/', $new_password)
-            && preg_match('/[^a-zA-Z0-9]/', $new_password);
-
-        if (!$pw_ok) {
-            $_err['new_password'] = 'New password must include upper/lowercase letters, a number and a symbol.';
-            $newPasswordFailed = true;
-        }
     }
 
     if ($confirm === '') {

@@ -175,6 +175,17 @@ function is_email($v) {
     return filter_var($v, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+// Shared password policy for register / reset / change-password / admin create.
+// Returns an error message, or null if the password is acceptable.
+function password_error($password, $label = 'Password') {
+    if ($password === '')                                   return "$label is required.";
+    if (strlen($password) < 8 || strlen($password) > 50)     return "$label must be between 8-50 characters.";
+    $ok = preg_match('/[a-z]/', $password) && preg_match('/[A-Z]/', $password)
+       && preg_match('/[0-9]/', $password) && preg_match('/[^a-zA-Z0-9]/', $password);
+    if (!$ok) return "$label must include upper/lowercase letters, a number and a symbol.";
+    return null;
+}
+
 // ============================================================================
 // Security
 // ============================================================================
@@ -185,14 +196,30 @@ $_user = $_SESSION['user'] ?? null;
 function login($user, $url = '/') { $_SESSION['user'] = $user; redirect($url); }
 function logout($url = '/')       { unset($_SESSION['user']); redirect($url); }
 
+// True for any admin-level account. Use this instead of comparing role to
+// 'admin' directly, so a superadmin is never mistaken for a member.
+// Note this is about admin *level*, not the exact role — auth('superadmin')
+// remains satisfiable only by a superadmin.
+function is_admin($user = null) {
+    global $_user;
+    $user ??= $_user;
+    return $user && in_array($user->role, ['admin', 'superadmin'], true);
+}
+
 function auth(...$roles) {
     global $_user;
     if ($_user) {
-        if ($roles) { if (in_array($_user->role, $roles)) return; }
-        else        { return; }
+        if ($roles) {
+            if (in_array($_user->role, $roles)) return;
+            // A superadmin satisfies any admin-level requirement.
+            if (in_array('admin', $roles) && $_user->role === 'superadmin') return;
+        } else {
+            return;
+        }
     }
-    // Admin-only pages send you to the admin entrance; everything else to the member login.
-    redirect($roles === ['admin'] ? '/admin/a4mi3.php' : '/login.php');
+    // Admin-level pages send you to the admin entrance; everything else to the member login.
+    redirect(in_array('admin', $roles) || in_array('superadmin', $roles)
+        ? '/admin/a4mi3.php' : '/login.php');
 }
 
 // ============================================================================

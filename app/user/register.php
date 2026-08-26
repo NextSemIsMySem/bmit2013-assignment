@@ -22,22 +22,9 @@ if (is_post()) {
 
     // Validate: password (server-side)
     $passwordFailed = false;
-    if ($password === '') {
-        $_err['password'] = 'Password is required.';
+    if ($pwError = password_error($password)) {
+        $_err['password'] = $pwError;
         $passwordFailed = true;
-    } elseif (strlen($password) < 8 || strlen($password) > 50) {
-        $_err['password'] = 'Password must be between 8-50 characters.';
-        $passwordFailed = true;
-    } else {
-        $pw_ok = preg_match('/[a-z]/', $password)
-            && preg_match('/[A-Z]/', $password)
-            && preg_match('/[0-9]/', $password)
-            && preg_match('/[^a-zA-Z0-9]/', $password);
-
-        if (!$pw_ok) {
-            $_err['password'] = 'Password must include upper/lowercase letters, a number and a symbol.';
-            $passwordFailed = true;
-        }
     }
 
     // Validate: confirm

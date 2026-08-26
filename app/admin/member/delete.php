@@ -13,7 +13,7 @@ if (is_exists('orders', 'user_id', $id)) {
     redirect('index.php');
 }
 
-$stmt = $_db->prepare('DELETE FROM user WHERE user_id = ?');
+$stmt = $_db->prepare("DELETE FROM user WHERE user_id = ? AND role = 'member'");
 $stmt->execute([$id]);
 
 temp('info', 'Member deleted.');
