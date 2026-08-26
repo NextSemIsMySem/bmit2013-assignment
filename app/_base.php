@@ -212,3 +212,34 @@ function save_photo($f, $folder = null, $width = 200, $height = 200) {
     $img->fromFile($f->tmp_name)->thumbnail($width, $height)->toFile("$folder/$photo", 'image/jpeg');
     return $photo;
 }
+
+// ============================================================================
+// Mail
+// ============================================================================
+
+// Return local root path
+function root($path = '') {
+    return __DIR__ . "/$path";
+}
+
+// Return base url (host + port)
+function base($path = '') {
+    return "http://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]/$path";
+}
+
+// Initialize and return mail object
+function get_mail() {
+    require_once __DIR__ . '/lib/PHPMailer.php';
+    require_once __DIR__ . '/lib/SMTP.php';
+
+    $m = new PHPMailer(true);
+    $m->isSMTP();
+    $m->SMTPAuth = true;
+    $m->Host     = 'smtp.gmail.com';
+    $m->Port     = 587;
+    $m->Username = 'daryl4work@gmail.com';   // <-- paste our demo Gmail address
+    $m->Password = 'lvnz vgum ocmj hcvc';             // <-- paste the 16-char Gmail App Password
+    $m->CharSet  = 'utf-8';
+    $m->setFrom($m->Username, 'ForgeFit Admin');
+    return $m;
+}
