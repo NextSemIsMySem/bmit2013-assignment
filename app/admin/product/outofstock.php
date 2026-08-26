@@ -22,6 +22,9 @@ if ($products):
     ];
     $adminRows = $products;
     $adminPaginate = true;
+    $adminToolbarButtons = [
+        ['label' => '← Back to Products', 'url' => 'products.php', 'class' => 'btn-dark'],
+    ];
     $adminActions = [];
     $adminActionsWidth = 220;
     $adminActionsRenderer = function ($row) {

@@ -22,7 +22,9 @@ if (is_post()) {
         $stm->execute([$identifier, $password]);
         $u = $stm->fetch();
 
-        if ($u) {
+        if ($u && !$u->active) {
+            $_err['password'] = 'This account has been disabled.';
+        } elseif ($u) {
             temp('info', 'Login successful.');
             login($u, $u->role === 'admin' ? '/admin/member/index.php' : '/index.php');
         } else {

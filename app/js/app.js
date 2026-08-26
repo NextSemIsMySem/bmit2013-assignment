@@ -33,6 +33,181 @@ const syncToggleFields = () => {
 syncToggleFields();
 toggleFields.forEach(toggle => toggle.addEventListener('change', syncToggleFields));
 
+const adminFilterBtn = document.getElementById('admin-table-filter-btn');
+const adminFilterDialog = document.getElementById('admin-table-filter-dialog');
+adminFilterBtn?.addEventListener('click', () => adminFilterDialog.showModal());
+
+document.querySelectorAll('[data-bulk-select]').forEach(bar => {
+    const storageKey = bar.dataset.storageKey;
+    const selectAllUrl = bar.dataset.selectAllUrl;
+
+    // Selection should persist across pagination of the SAME table (same
+    // pathname, different query string) but not survive navigating away to
+    // a different admin page and back. Since every navigation here is a
+    // full page load, track the last-visited pathname/table in
+    // sessionStorage and drop the previous table's selection the moment a
+    // different pathname loads.
+    const currentPath = location.pathname;
+    const lastPath = sessionStorage.getItem('bulk-select-last-path');
+    const lastKey = sessionStorage.getItem('bulk-select-last-key');
+    if (lastPath && lastKey && lastPath !== currentPath) {
+        localStorage.removeItem(lastKey);
+    }
+    sessionStorage.setItem('bulk-select-last-path', currentPath);
+    sessionStorage.setItem('bulk-select-last-key', storageKey);
+    const countEl = bar.querySelector('[data-bulk-count]');
+    const selectPageBtn = bar.querySelector('[data-bulk-select-page]');
+    const selectAllBtn = bar.querySelector('[data-bulk-select-all]');
+    const actionButtons = bar.querySelectorAll('[data-bulk-action]');
+    const cancelBtn = bar.querySelector('[data-bulk-cancel]');
+    const headerCheckbox = document.querySelector('[data-bulk-select-page-checkbox]');
+    const rowCheckboxes = () => Array.from(document.querySelectorAll('[data-bulk-checkbox]'));
+
+    const confirmDialog = document.querySelector('[data-bulk-confirm-dialog]');
+    const confirmMessageEl = confirmDialog?.querySelector('[data-bulk-confirm-message]');
+    const confirmOkBtn = confirmDialog?.querySelector('[data-bulk-confirm-ok]');
+    const confirmCancelBtn = confirmDialog?.querySelector('[data-bulk-confirm-cancel]');
+    let pendingAction = null;
+
+    const submitBulkAction = (button, selected) => {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = button.dataset.bulkActionUrl;
+        selected.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        localStorage.removeItem(storageKey);
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+    const getSelected = () => {
+        try {
+            return new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+        } catch {
+            return new Set();
+        }
+    };
+
+    const render = () => {
+        const selected = getSelected();
+        countEl.textContent = `${selected.size} selected`;
+
+        rowCheckboxes().forEach(checkbox => {
+            checkbox.checked = selected.has(checkbox.value);
+        });
+
+        if (headerCheckbox) {
+            const pageIds = rowCheckboxes().map(checkbox => checkbox.value);
+            headerCheckbox.checked = pageIds.length > 0 && pageIds.every(id => selected.has(id));
+        }
+
+        actionButtons.forEach(button => {
+            button.disabled = selected.size === 0;
+
+            const countWhen = button.dataset.bulkCountWhen;
+            if (countWhen !== undefined) {
+                const count = rowCheckboxes().filter(
+                    checkbox => selected.has(checkbox.value) && checkbox.dataset.bulkStatus === countWhen
+                ).length;
+                const labelText = button.querySelector('[data-bulk-label-text]');
+                if (labelText) labelText.textContent = `${button.dataset.bulkLabel} (${count})`;
+            }
+        });
+        if (cancelBtn) cancelBtn.disabled = selected.size === 0;
+        bar.hidden = selected.size === 0;
+    };
+
+    const setSelected = selected => {
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(selected)));
+        render();
+    };
+
+    render();
+
+    rowCheckboxes().forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selected = getSelected();
+            checkbox.checked ? selected.add(checkbox.value) : selected.delete(checkbox.value);
+            setSelected(selected);
+        });
+    });
+
+    headerCheckbox?.addEventListener('change', () => {
+        const selected = getSelected();
+        rowCheckboxes().forEach(checkbox => {
+            headerCheckbox.checked ? selected.add(checkbox.value) : selected.delete(checkbox.value);
+        });
+        setSelected(selected);
+    });
+
+    selectPageBtn?.addEventListener('click', () => {
+        const selected = getSelected();
+        rowCheckboxes().forEach(checkbox => selected.add(checkbox.value));
+        setSelected(selected);
+    });
+
+    selectAllBtn?.addEventListener('click', async () => {
+        if (!selectAllUrl) {
+            return;
+        }
+
+        selectAllBtn.disabled = true;
+
+        try {
+            const response = await fetch(selectAllUrl + window.location.search);
+            const ids = await response.json();
+            setSelected(new Set(ids.map(String)));
+        } catch (error) {
+            showInfo('Unable to select all — please try again.');
+        } finally {
+            selectAllBtn.disabled = false;
+        }
+    });
+
+    cancelBtn?.addEventListener('click', () => {
+        setSelected(new Set());
+    });
+
+    actionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const selected = getSelected();
+
+            if (selected.size === 0) {
+                return;
+            }
+
+            const confirmMessage = button.dataset.bulkActionConfirm;
+            if (confirmMessage && confirmDialog) {
+                pendingAction = button;
+                confirmMessageEl.textContent = confirmMessage;
+                confirmDialog.showModal();
+                return;
+            }
+
+            submitBulkAction(button, selected);
+        });
+    });
+
+    confirmCancelBtn?.addEventListener('click', () => {
+        pendingAction = null;
+        confirmDialog.close();
+    });
+
+    confirmOkBtn?.addEventListener('click', () => {
+        confirmDialog.close();
+        if (pendingAction) {
+            submitBulkAction(pendingAction, getSelected());
+            pendingAction = null;
+        }
+    });
+});
+
 document.querySelectorAll('[data-login-required]').forEach(button => {
     button.addEventListener('click', event => {
         if (isLoggedIn) {

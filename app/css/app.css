@@ -142,6 +142,58 @@ nav a.active {
     white-space: nowrap;
 }
 
+.admin-table-toolbar-search-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-table-filter-btn--active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+#admin-table-filter-dialog {
+    width: min(360px, 90vw);
+    padding: 20px 24px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+#admin-table-filter-dialog p {
+    margin: 0 0 16px;
+    color: #1a1a2e;
+    font-weight: 700;
+}
+
+.form.admin-table-filter-form {
+    grid-template-columns: 1fr;
+}
+
+.admin-table-filter-form label {
+    margin-top: 8px;
+}
+
+.admin-table-filter-form label:first-child {
+    margin-top: 0;
+}
+
+.admin-table-filter-form select,
+.admin-table-filter-form input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-table-filter-form section.buttons {
+    margin-top: 16px;
+}
+
+#admin-table-filter-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
 .admin-table-toolbar-actions {
     display: flex;
     align-items: center;
@@ -149,7 +201,10 @@ nav a.active {
 }
 
 .admin-table-toolbar-actions .btn-green,
-.admin-table-toolbar-actions .btn-red {
+.admin-table-toolbar-actions .btn-red,
+.admin-table-toolbar-actions .btn-dark,
+.admin-table-toolbar-actions .btn-blue,
+.admin-table-toolbar-actions .btn-gray {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1118,7 +1173,10 @@ h1 {
 }
 
 .form > label.full-width-label,
-.form > label.toggle-field--discount {
+.form > label.toggle-field--discount,
+.form > p.full-width-label,
+.form > button.full-width-label,
+.form > div.full-width-label {
     grid-column: 1 / -1;
 }
 
@@ -1353,6 +1411,244 @@ label.upload img {
     color: #ffffff;
 }
 
+.btn-blue {
+    padding: 10px 20px;
+    border: 1px solid #2563eb;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #2563eb;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-blue:hover {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn-gray {
+    padding: 10px 20px;
+    border: 1px solid #6b7280;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #6b7280;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-gray:hover {
+    background: #6b7280;
+    color: #ffffff;
+}
+
+#individual-voucher-btn {
+    justify-self: start;
+}
+
+#individual-voucher-dialog {
+    width: min(480px, 90vw);
+    max-height: 80vh;
+    padding: 20px 24px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+#individual-voucher-dialog p {
+    margin: 0 0 12px;
+    color: #1a1a2e;
+    font-weight: 700;
+}
+
+.individual-voucher-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.individual-voucher-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.individual-voucher-row[data-locked="1"] {
+    background: #f4f5f7;
+}
+
+.individual-voucher-row__used {
+    padding: 6px 12px;
+    color: #6b7280;
+    font-weight: 600;
+    font-style: italic;
+}
+
+.individual-voucher-row__status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.individual-voucher-row__status--active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.individual-voucher-row__status--disabled {
+    background: #f4f5f7;
+    color: #6b7280;
+}
+
+.individual-voucher-row__status--used {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.archived-field {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.archived-field label {
+    width: 140px;
+    flex-shrink: 0;
+    font-weight: bold;
+}
+
+.individual-voucher-row__code {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #1a1a2e;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.individual-voucher-row__code:hover,
+.individual-voucher-row__code:focus-visible {
+    border-color: #2563eb;
+    background: #eff6ff;
+    outline: none;
+}
+
+.individual-voucher-row__code-input {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #1a1a2e;
+    width: 16ch;
+    padding: 4px 8px;
+    border: 1px solid #2563eb;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.individual-voucher-row__buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.individual-voucher-row__randomize {
+    padding: 6px 12px;
+    border: 1px solid #d7dbe5;
+    border-radius: 4px;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2563eb;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.individual-voucher-row__randomize:hover {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.individual-voucher-row__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 4px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.individual-voucher-row__toggle:hover,
+.individual-voucher-row__toggle:focus-visible {
+    background: #fee2e2;
+}
+
+.individual-voucher-row__toggle img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.individual-voucher-row__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 50%;
+    background: #d7dbe5;
+    color: #4a4a4a;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.individual-voucher-row__remove:hover:not(:disabled) {
+    background: #9aa0ac;
+    color: #ffffff;
+}
+
+.individual-voucher-row__remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.individual-voucher-dialog-add {
+    display: block;
+    margin-top: 14px;
+}
+
+.individual-voucher-dialog-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+#individual-voucher-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
 .product-image-field .btn-dark {
     margin-top: 16px;
 }
@@ -1471,6 +1767,172 @@ label.upload img {
 
 .admin-table__actions {
     white-space: nowrap;
+}
+
+.admin-table__bulk-select {
+    width: 36px;
+    text-align: center;
+}
+
+.admin-table__bulk-select input[type="checkbox"],
+[data-bulk-checkbox] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.admin-bulk-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border: 1px solid #2563eb;
+    border-radius: 6px;
+    background: #eff6ff;
+}
+
+.admin-bulk-bar[hidden] {
+    display: none;
+}
+
+.admin-bulk-bar__count {
+    font-weight: 700;
+    color: #1a1a2e;
+    white-space: nowrap;
+}
+
+.admin-bulk-bar__link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #2563eb;
+    text-decoration: underline;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.admin-bulk-bar__link:hover {
+    color: #1e40af;
+}
+
+.admin-bulk-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.admin-bulk-bar__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #e74c3c;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-bulk-bar__action img {
+    width: 16px;
+    height: 16px;
+}
+
+.admin-bulk-bar__action:hover:not(:disabled) {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.admin-bulk-bar__action--cancel {
+    border-color: #1a1a2e;
+    color: #1a1a2e;
+}
+
+.admin-bulk-bar__action--cancel:hover:not(:disabled) {
+    background: #1a1a2e;
+    color: #ffffff;
+}
+
+.admin-bulk-bar__action--green {
+    border-color: #27ae60;
+    color: #27ae60;
+}
+
+.admin-bulk-bar__action--green:hover:not(:disabled) {
+    background: #27ae60;
+    color: #ffffff;
+}
+
+.admin-bulk-bar__action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.admin-bulk-confirm-dialog {
+    color: #7f1d1d;
+    background: #fee2e2;
+    border: 1px solid #e74c3c;
+    border-radius: 6px;
+    padding: 20px 26px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.admin-bulk-confirm-dialog p {
+    margin: 0 0 16px;
+    font-weight: 700;
+}
+
+.admin-bulk-confirm-dialog__actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.admin-bulk-confirm-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.voucher-code-duplicate-dialog {
+    color: #7f1d1d;
+    background: #fee2e2;
+    border: 1px solid #e74c3c;
+    border-radius: 6px;
+    padding: 20px 26px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.voucher-code-duplicate-dialog p {
+    margin: 0 0 16px;
+    font-weight: 700;
+}
+
+.voucher-code-duplicate-dialog button {
+    padding: 8px 20px;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #e74c3c;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.voucher-code-duplicate-dialog button:hover {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.voucher-code-duplicate-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.35);
 }
 
 .admin-action-button {
