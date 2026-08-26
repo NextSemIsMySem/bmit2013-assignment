@@ -1,96 +1,37 @@
 <?php
-include '../_base.php';
+require '../../_base.php';
+auth('admin');
 
-// ----------------------------------------------------------------------------
-
-// (1) Authorization (member)
-auth('Member');
-
-// (2) Return order (based on id) belong to the user
 $id = req('id');
-$stm = $_db->prepare('
-    SELECT * FROM `order`
-    WHERE id = ? AND user_id = ?
-');
-$stm->execute([$id, $_user->id]);
-$o = $stm->fetch();
-if (!$o) redirect('history.php');
+$stmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
+$stmt->execute([$id]);
+$member = $stmt->fetch();
 
-// (3) Return items (and products) belong to the order
-$stm = $_db->prepare('
-    SELECT i.*, p.name, p.photo
-    FROM item AS i, product AS p
-    WHERE i.product_id = p.id
-    AND i.order_id = ?
-');
-$stm->execute([$id]);
-$arr = $stm->fetchAll();
+if (!$member) {
+    redirect('index.php');
+}
 
-// ----------------------------------------------------------------------------
+$photoUrl = $member->photo ? '/photos/' . encode($member->photo) : '/images/profile.png';
 
-$_title = 'Order | Detail';
-include '../_head.php';
+$_title = 'Member Detail';
+include '../../_head.php';
 ?>
 
-<style>
-    .popup {
-        width: 100px;
-        height: 100px;
-    }
-</style>
-
-<form class="form">
-    <label>Order Id</label>
-    <b><?= $o->id ?></b>
-    <br>
-
-    <label>Datetime</label>
-    <div><?= $o->datetime ?></div>
-    <br>
-
-    <label>Count</label>
-    <div><?= $o->count ?></div>
-    <br>
-
-    <label>Total</label>
-    <div>RM <?= $o->total ?></div>
-    <br>
-</form>
-
-<p><?= count($arr) ?> item(s)</p>
-
-<table class="table">
-    <tr>
-        <th>Product Id</th>
-        <th>Product Name</th>
-        <th>Price (RM)</th>
-        <th>Unit</th>
-        <th>Subtotal (RM)</th>
-    </tr>
-
-    <?php foreach ($arr as $i): ?>
-    <tr>
-        <td><?= $i->product_id ?></td>
-        <td><?= $i->name ?></td>
-        <td class="right"><?= $i->price ?></td>
-        <td class="right"><?= $i->unit ?></td>
-        <td class="right">
-            <?= $i->subtotal ?>
-            <img src="/products/<?= $i->photo ?>" class="popup">
-        </td>
-    </tr>
-    <?php endforeach ?>
-
-    <tr>
-        <th colspan="3"></th>
-        <th class="right"><?= $o->count ?></th>
-        <th class="right"><?= $o->total ?></th>
-    </tr>
+<table class="table detail">
+    <tr><th>Photo</th><td><img class="detail-photo" src="<?= $photoUrl ?>" alt="Photo"></td></tr>
+    <tr><th>Id</th><td><?= encode($member->user_id) ?></td></tr>
+    <tr><th>Username</th><td><?= encode($member->username) ?></td></tr>
+    <tr><th>Name</th><td><?= encode($member->name) ?></td></tr>
+    <tr><th>Email</th><td><?= encode($member->email) ?></td></tr>
+    <tr><th>Role</th><td><?= encode($member->role) ?></td></tr>
+    <tr><th>Joined</th><td><?= encode($member->created_at) ?></td></tr>
 </table>
 
-<p>
-    <button data-get="history.php">History</button>
-</p>
+<div class="buttons">
+    <button type="button" data-get="index.php">Back</button>
+    <button type="button" data-get="update.php?id=<?= encode($member->user_id) ?>">Edit</button>
+    <button type="button" data-post="delete.php?id=<?= encode($member->user_id) ?>">Delete</button>
+</div>
 
 <?php
-include '../_foot.php';
+include '../../_foot.php';
