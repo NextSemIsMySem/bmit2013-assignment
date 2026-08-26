@@ -100,6 +100,8 @@ if (is_post()) {
 }
 
 $_title = 'Register';
+$_backUrl = '/';
+$_backLabel = 'Back to Home';
 include '../_head.php';
 ?>
 

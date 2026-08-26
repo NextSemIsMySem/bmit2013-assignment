@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $_title ?? 'Untitled' ?></title>
     <link rel="stylesheet" href="/css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+    <?php if (!empty($_photoEditor)): ?>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+    <?php endif; ?>
     <link rel="icon" href="data:,">
     <link rel="shortcut icon" href="data:,">
     <script>const isLoggedIn = <?= $_user ? 'true' : 'false' ?>;</script>
@@ -13,18 +16,21 @@
 <body>
     <header>
         <div class="title">
+            <?php if (!empty($_backUrl)): ?>
+                <a class="back-link" href="<?= encode($_backUrl) ?>" aria-label="<?= encode($_backLabel ?? 'Back') ?>" title="<?= encode($_backLabel ?? 'Back') ?>">&larr;</a>
+            <?php endif; ?>
             <a href="<?= $_user?->role === 'admin' ? '/admin/member/index.php' : '/' ?>">
                 <img class="sport" src="/images/sport.png" alt="Logo">
             </a>
             <h1 class="demotitle">ForgeFit Fitness Market</h1>
             <?php if ($_user): ?>
-                <a href="/user/profile.php" class="profile-link" id="profile-link" aria-haspopup="true" aria-expanded="false">
+                <a href="/user/settings.php" class="profile-link" id="profile-link" aria-haspopup="true" aria-expanded="false">
                     <h1 class="heading"><?= encode($_user->name) . ' (' . encode($_user->role) . ')' ?></h1>
                     <img class="profile-icon" src="<?= $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png' ?>" alt="Profile">
                 </a>
                 <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
-                    <a role="menuitem" href="/user/profile.php">Change Profile</a>
-                    <a role="menuitem" href="/user/change-password.php">Change Password</a>
+                    <a role="menuitem" href="/user/settings.php">Settings</a>
+                    <a role="menuitem" href="/user/reset.php">Forgot Password</a>
                     <a role="menuitem" href="/logout.php">Logout</a>
                 </div>
             <?php else: ?>
@@ -40,8 +46,9 @@
     <nav>
         <?php $reminders = []; $newRestocks = []; ?>
         <?php if (($_navSection ?? null) === 'settings'): ?>
-        <a href="/user/profile.php">Profile</a>
-        <a href="/user/change-password.php">Change Password</a>
+        <a href="/user/settings.php">Settings</a>
+        <?php elseif (($_navSection ?? null) === 'forgot-password'): ?>
+        <a href="/user/reset.php">Forgot Password</a>
         <?php else: ?>
         <?php if ($_user?->role === 'admin'): ?>
         <a href="/admin/member/index.php">Members</a>

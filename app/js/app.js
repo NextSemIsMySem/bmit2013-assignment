@@ -385,6 +385,87 @@ $('input[type="file"]').on('change', function () {
     }
 });
 
+const photoEditorDialog = document.querySelector('#photo-editor-dialog');
+const photoEditorInput = document.querySelector('#photo');
+const photoEditorImage = document.querySelector('#photo-editor-image');
+const photoEditorPreview = document.querySelector('label.upload img');
+
+if (photoEditorDialog && photoEditorInput && photoEditorImage && window.Cropper) {
+    let cropper;
+    let originalPreviewUrl = photoEditorPreview?.src;
+
+    const closePhotoEditor = () => {
+        cropper?.destroy();
+        cropper = null;
+        photoEditorDialog.close();
+    };
+
+    photoEditorInput.addEventListener('change', () => {
+        const file = photoEditorInput.files?.[0];
+
+        if (!file || !file.type.startsWith('image/')) {
+            return;
+        }
+
+        originalPreviewUrl = photoEditorPreview?.src;
+        photoEditorImage.src = URL.createObjectURL(file);
+        photoEditorImage.onload = () => {
+            cropper?.destroy();
+            cropper = new Cropper(photoEditorImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                background: false,
+            });
+            photoEditorDialog.showModal();
+        };
+    });
+
+    photoEditorDialog.querySelectorAll('[data-photo-editor-action]').forEach(button => {
+        button.addEventListener('click', () => {
+            const action = button.dataset.photoEditorAction;
+
+            if (action === 'cancel') {
+                photoEditorInput.value = '';
+                if (photoEditorPreview && originalPreviewUrl) {
+                    photoEditorPreview.src = originalPreviewUrl;
+                }
+                closePhotoEditor();
+            } else if (action === 'apply') {
+                cropper?.getCroppedCanvas({width: 800, height: 800}).toBlob(blob => {
+                    if (!blob) {
+                        return;
+                    }
+
+                    const editedFile = new File([blob], 'profile-photo.jpg', {type: 'image/jpeg'});
+                    const transfer = new DataTransfer();
+                    transfer.items.add(editedFile);
+                    photoEditorInput.files = transfer.files;
+                    if (photoEditorPreview) {
+                        photoEditorPreview.src = URL.createObjectURL(editedFile);
+                    }
+                    closePhotoEditor();
+                }, 'image/jpeg', 0.9);
+            } else if (action === 'rotate-left') {
+                cropper?.rotate(-90);
+            } else if (action === 'rotate-right') {
+                cropper?.rotate(90);
+            } else if (action === 'flip-horizontal') {
+                cropper?.scaleX(-(cropper.getData().scaleX || 1));
+            } else if (action === 'flip-vertical') {
+                cropper?.scaleY(-(cropper.getData().scaleY || 1));
+            } else if (action === 'reset') {
+                cropper?.reset();
+            }
+        });
+    });
+
+    photoEditorDialog.addEventListener('cancel', event => {
+        event.preventDefault();
+        photoEditorDialog.querySelector('[data-photo-editor-action="cancel"]').click();
+    });
+}
+
 const productMainImage = document.querySelector('#product-main-image');
 const productThumbs = document.querySelectorAll('.product-detail-thumb');
 const productImageCounter = document.querySelector('#product-image-counter');

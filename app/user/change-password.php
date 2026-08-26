@@ -59,6 +59,8 @@ if (is_post()) {
 
 $_title = 'Change Password';
 $_navSection = 'settings';
+$_backUrl = '/user/settings.php';
+$_backLabel = 'Back to Settings';
 include '../_head.php';
 ?>
 

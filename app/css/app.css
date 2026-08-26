@@ -1290,6 +1290,52 @@ label.upload img {
     cursor: pointer;
 }
 
+.photo-editor-dialog {
+    width: min(720px, 90vw);
+    padding: 20px;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.photo-editor-dialog h2 {
+    margin: 0 0 16px;
+    color: #1a1a2e;
+    font-size: 20px;
+}
+
+.photo-editor-canvas {
+    max-height: 60vh;
+    background: #1a1a2e;
+}
+
+.photo-editor-canvas img {
+    display: block;
+    max-width: 100%;
+    max-height: 60vh;
+}
+
+.photo-editor-tools, .photo-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.photo-editor-tools button {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 6px 10px;
+}
+
+.photo-editor-actions {
+    justify-content: flex-end;
+}
+
+.photo-editor-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
 .form > .product-image-field {
     display: block;
 }
@@ -1657,6 +1703,29 @@ label.upload img {
     display: flex;
     gap: 10px;
     margin-top: 14px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 14px;
+    color: #1a1a2e;
+    font-size: 28px;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.title > .back-link {
+    flex-shrink: 0;
+    margin: 0 4px 0 0;
+}
+
+.back-link:hover, .back-link:focus-visible {
+    color: #e74c3c;
+    text-decoration: underline;
 }
 
 .err {

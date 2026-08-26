@@ -68,7 +68,10 @@ if (is_post()) {
     }
 }
 
-$_title = 'Reset Password';
+$_title = 'Forgot Password';
+$_navSection = 'forgot-password';
+$_backUrl = '/login.php';
+$_backLabel = 'Back to Login';
 include '../_head.php';
 ?>
 

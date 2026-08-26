@@ -60,6 +60,8 @@ if (is_post()) {
 }
 
 $_title = 'Reset Password';
+$_backUrl = '/user/reset.php';
+$_backLabel = 'Back to Forgot Password';
 include '../_head.php';
 ?>
 
