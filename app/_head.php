@@ -49,6 +49,8 @@
         <a href="/user/settings.php">Settings</a>
         <?php elseif (($_navSection ?? null) === 'forgot-password'): ?>
         <a href="/user/reset.php">Forgot Password</a>
+        <?php elseif (($_navSection ?? null) === 'reset-password'): ?>
+        <a href="/user/token.php?id=<?= encode($_GET['id'] ?? '') ?>">Reset Password</a>
         <?php else: ?>
         <?php if (is_admin()): ?>
         <?php if ($_user?->role === 'superadmin'): ?>

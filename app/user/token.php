@@ -47,6 +47,7 @@ if (is_post()) {
 }
 
 $_title = 'Reset Password';
+$_navSection = 'reset-password';
 $_backUrl = '/user/reset.php';
 $_backLabel = 'Back to Forgot Password';
 include '../_head.php';
