@@ -3,7 +3,9 @@ require '../../_base.php';
 auth('admin');
 
 $id = req('id');
-$stmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
+// Members only — an admin must not be able to edit an admin/superadmin
+// account through the member module.
+$stmt = $_db->prepare("SELECT * FROM user WHERE user_id = ? AND role = 'member'");
 $stmt->execute([$id]);
 $member = $stmt->fetch();
 
@@ -14,7 +16,6 @@ if (!$member) {
 if (is_post()) {
     $name = req('name');
     $email = req('email');
-    $role = req('role');
 
     if ($name === '') {
         $_err['name'] = 'Name is required.';
@@ -32,13 +33,11 @@ if (is_post()) {
         $_err['email'] = 'Duplicated.';
     }
 
-    if (!in_array($role, ['admin', 'member'], true)) {
-        $_err['role'] = 'Please select a valid role.';
-    }
-
     if (!$_err) {
-        $stmt = $_db->prepare('UPDATE user SET name = ?, email = ?, role = ? WHERE user_id = ?');
-        $stmt->execute([$name, $email, $role, $id]);
+        // Role is deliberately not editable: admins are created as fresh
+        // accounts by a superadmin, never promoted from a member.
+        $stmt = $_db->prepare("UPDATE user SET name = ?, email = ? WHERE user_id = ? AND role = 'member'");
+        $stmt->execute([$name, $email, $id]);
 
         temp('info', 'Member updated.');
         redirect('detail.php?id=' . $id);
@@ -47,7 +46,6 @@ if (is_post()) {
     // Pre-fill sticky form fields from the DB on first (GET) load.
     $_REQUEST['name'] = $member->name;
     $_REQUEST['email'] = $member->email;
-    $_REQUEST['role'] = $member->role;
 }
 
 $_title = 'Update Member';
@@ -57,7 +55,6 @@ include '../../_head.php';
 <form class="form" method="post">
     <?php html_text('name', 'Name'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
-    <?php html_select('role', 'Role', ['admin' => 'Admin', 'member' => 'Member']); ?>
     <section class="buttons">
         <button type="submit">Save</button>
         <button type="button" data-get="detail.php?id=<?= encode($id) ?>">Cancel</button>

@@ -7,7 +7,7 @@ require '../_base.php';
 // page is.
 
 if ($_user) {
-    redirect($_user->role === 'admin' ? '/admin/member/index.php' : '/index.php');
+    redirect(is_admin() ? '/admin/member/index.php' : '/index.php');
 }
 
 if (is_post()) {
@@ -28,7 +28,7 @@ if (is_post()) {
         // message rather than being told this door isn't theirs.
         $loginColumn = is_email($identifier) ? 'email' : 'username';
         $stm = $_db->prepare(
-            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role = 'admin'"
+            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role IN ('admin','superadmin')"
         );
         $stm->execute([$identifier, $password]);
         $u = $stm->fetch();

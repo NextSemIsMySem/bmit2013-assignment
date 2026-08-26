@@ -17,22 +17,9 @@ if (is_post()) {
     $confirm = req('confirm');
     $passwordFailed = false;
 
-    if ($password === '') {
-        $_err['password'] = 'New password is required.';
+    if ($pwError = password_error($password, 'New password')) {
+        $_err['password'] = $pwError;
         $passwordFailed = true;
-    } elseif (strlen($password) < 8 || strlen($password) > 50) {
-        $_err['password'] = 'New password must be between 8-50 characters.';
-        $passwordFailed = true;
-    } else {
-        $pw_ok = preg_match('/[a-z]/', $password)
-            && preg_match('/[A-Z]/', $password)
-            && preg_match('/[0-9]/', $password)
-            && preg_match('/[^a-zA-Z0-9]/', $password);
-
-        if (!$pw_ok) {
-            $_err['password'] = 'New password must include upper/lowercase letters, a number and a symbol.';
-            $passwordFailed = true;
-        }
     }
 
     if ($confirm === '') {

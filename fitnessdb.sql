@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
-    `role` ENUM('admin', 'member') NOT NULL DEFAULT 'member',
+    `role` ENUM('superadmin', 'admin', 'member') NOT NULL DEFAULT 'member',
     `active` TINYINT(1) NOT NULL DEFAULT 1,
     `photo` VARCHAR(100) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
