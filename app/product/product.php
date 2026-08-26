@@ -1,5 +1,6 @@
 <?php
 require '../_base.php';
+require '_stars.php';
 
 $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
 $product = null;
@@ -48,12 +49,28 @@ if ($product && $_user) {
     }
 }
 
+$reviewSummary = null;
+$reviews = [];
 if ($product) {
     $imagesStmt = $_db->prepare(
         'SELECT product_imageid FROM product_image WHERE product_id = ? ORDER BY product_imageid'
     );
     $imagesStmt->execute([$product->product_id]);
     $productImages = array_column($imagesStmt->fetchAll(), 'product_imageid');
+
+    $summaryStmt = $_db->prepare('SELECT COUNT(*) AS count, AVG(rating) AS average FROM review WHERE product_id = ?');
+    $summaryStmt->execute([$product->product_id]);
+    $reviewSummary = $summaryStmt->fetch();
+
+    $reviewsStmt = $_db->prepare(
+        'SELECT r.rating, r.comment, r.created_at, u.name
+         FROM review r
+         JOIN user u ON u.user_id = r.user_id
+         WHERE r.product_id = ?
+         ORDER BY r.created_at DESC'
+    );
+    $reviewsStmt->execute([$product->product_id]);
+    $reviews = $reviewsStmt->fetchAll();
 }
 
 $mainImage = $productImages ? '/photos/' . htmlspecialchars($productImages[0]) : '/images/sport.png';
@@ -108,6 +125,16 @@ include '../_head.php';
                 </button>
             </div>
             <p class="product-detail-price">RM <?= htmlspecialchars($product->price) ?></p>
+
+            <?php if ($reviewSummary && $reviewSummary->count > 0): ?>
+                <p class="product-detail-rating">
+                    <?= render_stars($reviewSummary->average) ?>
+                    <span><?= number_format($reviewSummary->average, 1) ?> (<?= $reviewSummary->count ?> review<?= $reviewSummary->count == 1 ? '' : 's' ?>)</span>
+                </p>
+            <?php else: ?>
+                <p class="product-detail-rating product-detail-rating--empty">No reviews yet.</p>
+            <?php endif; ?>
+
             <p><?= htmlspecialchars($product->description) ?></p>
 
             <dl class="product-details-list">
@@ -166,11 +193,11 @@ include '../_head.php';
                         <button type="button" data-quantity-plus aria-label="Increase quantity">+</button>
                     </div>
 
-                    <button class="purchase-button" type="submit" name="intent" value="checkout" data-login-required>
+                    <button class="purchase-button" type="submit" formaction="/cart/checkout.php" formmethod="get" data-login-required>
                         Purchase
                     </button>
 
-                    <button class="add-cart-button" type="submit" name="intent" value="cart" data-login-required>
+                    <button class="add-cart-button" type="submit" data-login-required>
                         <img src="/images/cart.png" alt="">
                         <span>Add to Cart</span>
                     </button>
@@ -182,6 +209,28 @@ include '../_head.php';
             <?php endif; ?>
         </section>
     </article>
+
+    <section class="product-reviews">
+        <h3>Reviews<?= $reviewSummary && $reviewSummary->count > 0 ? ' (' . $reviewSummary->count . ')' : '' ?></h3>
+        <?php if ($reviews): ?>
+            <ul class="review-list">
+                <?php foreach ($reviews as $review): ?>
+                    <li class="review-list__item">
+                        <div class="review-list__header">
+                            <?= render_stars($review->rating) ?>
+                            <span class="review-list__author"><?= encode($review->name) ?></span>
+                            <span class="review-list__date"><?= encode(date('d M Y', strtotime($review->created_at))) ?></span>
+                        </div>
+                        <?php if ($review->comment): ?>
+                            <p class="review-list__comment"><?= encode($review->comment) ?></p>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No reviews yet &mdash; be the first to review this product after your order is delivered.</p>
+        <?php endif; ?>
+    </section>
 <?php endif; ?>
 
 <dialog id="product-unavailable-dialog" data-redirect="<?= $isBlocked ? '1' : '' ?>" aria-labelledby="product-unavailable-message">

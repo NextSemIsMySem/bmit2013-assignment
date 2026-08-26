@@ -120,7 +120,9 @@ if ($adminPaginate) {
                     value="<?= encode($adminSearchValue) ?>"
                     placeholder="<?= encode($adminSearchPlaceholder) ?>"
                 >
-                <button type="submit" aria-label="<?= encode($adminSearchLabel) ?>">&#128269;</button>
+                <button type="submit" class="admin-table-search__button" aria-label="<?= encode($adminSearchLabel) ?>">
+                    <img src="/images/search.png" alt="">
+                </button>
                 <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
             </form>
         <?php endif; ?>
@@ -163,7 +165,7 @@ if ($adminPaginate) {
                         <a href="?<?= encode(http_build_query($params)) ?>">
                             <?= encode($label) ?>
                             <?php if ($isSortedField): ?>
-                                <?= $adminDir === 'asc' ? '🔼' : '🔽' ?>
+                                <span class="admin-table__sort-arrow"><?= $adminDir === 'asc' ? '&#9650;' : '&#9660;' ?></span>
                             <?php endif; ?>
                         </a>
                     <?php endif; ?>

@@ -8,7 +8,6 @@ if (!is_post()) {
 
 $productId = filter_var($_POST['product_id'] ?? null, FILTER_VALIDATE_INT);
 $quantity = filter_var($_POST['quantity'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
-$intent = ($_POST['intent'] ?? '') === 'checkout' ? 'checkout' : 'cart';
 
 $referer = $_SERVER['HTTP_REFERER'] ?? '/cart/cart.php';
 $fallbackUrl = $productId ? '/product/product.php?id=' . $productId : $referer;
@@ -41,4 +40,4 @@ $upsert = $_db->prepare(
 $upsert->execute([$_user->user_id, $productId, $newQty, $newQty]);
 
 temp('info', 'Added to cart.');
-redirect($intent === 'checkout' ? '/cart/checkout.php' : $fallbackUrl);
+redirect($fallbackUrl);

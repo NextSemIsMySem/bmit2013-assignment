@@ -23,9 +23,18 @@ function order_status_class($status) {
 
 // A pending cancellation request is shown/filtered as "Cancelled" even
 // though the order's real status hasn't changed yet — it's only final once
-// an admin approves it (admin side not built yet).
+// an admin approves it.
 function order_has_pending_cancellation($order) {
     return !empty($order->cancellation_requested_at) && $order->status !== 'cancelled';
+}
+
+// True once an admin has rejected a cancellation request and the member
+// hasn't re-requested since. The order keeps going as normal — this is
+// just informational, shown alongside the regular status timeline.
+function order_has_cancellation_rejection($order) {
+    return !empty($order->cancellation_rejected_at)
+        && !order_has_pending_cancellation($order)
+        && $order->status !== 'cancelled';
 }
 
 function order_display_label($order) {

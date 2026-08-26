@@ -17,7 +17,7 @@ if (!$order) {
 }
 
 $itemsStmt = $_db->prepare(
-    'SELECT op.quantity, op.unit_price, op.final_price, p.product_name
+    'SELECT op.product_id, op.quantity, op.unit_price, op.final_price, p.product_name
      FROM order_product op
      JOIN product p ON p.product_id = op.product_id
      WHERE op.order_id = ?'
@@ -39,8 +39,9 @@ include '../_head.php';
     <?php include '../orders/_order_detail.php'; ?>
 
     <section class="buttons">
-        <a class="purchase-button" href="/index.php">Continue Shopping</a>
+        <a class="place-order-button" href="/index.php">Continue Shopping</a>
         <a class="checkout-back" href="/orders/history.php">View Order History</a>
+        <button class="checkout-back" type="button" data-print-receipt>Print Receipt</button>
     </section>
 </section>
 

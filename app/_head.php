@@ -47,6 +47,7 @@
         <a href="/admin/member/index.php">Members</a>
         <a href="/admin/product/products.php">Products</a>
         <a href="/admin/voucher/vouchers.php">Vouchers</a>
+        <a href="/admin/order/orders.php">Orders</a>
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
         <?php if ($_user?->role !== 'admin'): ?>

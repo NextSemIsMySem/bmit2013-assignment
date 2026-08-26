@@ -19,7 +19,7 @@ if (!$order) {
 }
 
 $itemsStmt = $_db->prepare(
-    'SELECT op.quantity, op.unit_price, op.final_price, p.product_name
+    'SELECT op.product_id, op.quantity, op.unit_price, op.final_price, p.product_name
      FROM order_product op
      JOIN product p ON p.product_id = op.product_id
      WHERE op.order_id = ?'
@@ -47,6 +47,7 @@ include '../_head.php';
 
     <section class="buttons">
         <a class="checkout-back" href="/orders/history.php">Back to Order History</a>
+        <button class="checkout-back" type="button" data-print-receipt>Print Receipt</button>
         <?php if ($canRetryPayment): ?>
             <form method="post" action="retry-payment.php">
                 <input type="hidden" name="order_id" value="<?= $order->order_id ?>">

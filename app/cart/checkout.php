@@ -12,18 +12,65 @@ $paymentMethods = [
     'card' => 'Pay with Card (Stripe)',
 ];
 
-$stmt = $_db->prepare(
-    'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, ci.quantity
-     FROM cart_item ci
-     JOIN product p ON p.product_id = ci.product_id
-     WHERE ci.user_id = ?'
-);
-$stmt->execute([$_user->user_id]);
-$items = $stmt->fetchAll();
+// Three ways to land here: "Buy Now" from a product page (never touches the
+// cart), or a normal cart checkout — either the whole cart or just the
+// items the member ticked on cart.php.
+$mode = req('mode');
+if ($mode === '') {
+    $mode = isset($_GET['product_id']) ? 'buy_now' : 'cart';
+}
 
-if (!$items) {
-    temp('info', 'Your cart is empty.');
-    redirect('/cart/cart.php');
+if ($mode === 'buy_now') {
+    $buyProductId = filter_var(req('product_id'), FILTER_VALIDATE_INT);
+    $buyQuantity = filter_var(req('quantity'), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
+
+    if (!$buyProductId) {
+        redirect('/index.php');
+    }
+
+    $productStmt = $_db->prepare(
+        'SELECT product_id, product_name, price, stock, availability FROM product WHERE product_id = ?'
+    );
+    $productStmt->execute([$buyProductId]);
+    $product = $productStmt->fetch();
+
+    if (!$product || !$product->availability || $product->stock < 1) {
+        temp('info', 'This product is not available right now.');
+        redirect('/index.php');
+    }
+
+    $buyQuantity = max(1, min($product->stock, $buyQuantity));
+
+    $items = [(object) [
+        'product_id' => $product->product_id,
+        'product_name' => $product->product_name,
+        'price' => $product->price,
+        'quantity' => $buyQuantity,
+    ]];
+} else {
+    $mode = 'cart';
+    $selectedIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_REQUEST['selected'] ?? [])))));
+
+    $sql = 'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, ci.quantity
+            FROM cart_item ci
+            JOIN product p ON p.product_id = ci.product_id
+            WHERE ci.user_id = ?';
+    $params = [$_user->user_id];
+
+    if ($selectedIds) {
+        $placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
+        $sql .= " AND ci.product_id IN ($placeholders)";
+        $params = array_merge($params, $selectedIds);
+    }
+
+    $stmt = $_db->prepare($sql);
+    $stmt->execute($params);
+    $items = $stmt->fetchAll();
+
+    if (!$items) {
+        temp('info', $selectedIds ? 'Please select at least one item to check out.' : 'Your cart is empty.');
+        redirect('/cart/cart.php');
+    }
 }
 
 $subtotal = 0;
@@ -135,7 +182,9 @@ if (is_post()) {
                 $discountAmount,
                 $subtotal,
                 $shippingFee,
-                'pending'
+                'pending',
+                null,
+                $mode === 'buy_now' ? [] : null
             );
         } catch (RuntimeException $e) {
             $_err['stock'] = $e->getMessage();
@@ -171,6 +220,16 @@ include '../_head.php';
 ?>
 
 <form class="checkout-layout" method="post">
+    <input type="hidden" name="mode" value="<?= encode($mode) ?>">
+    <?php if ($mode === 'buy_now'): ?>
+        <input type="hidden" name="product_id" value="<?= $items[0]->product_id ?>">
+        <input type="hidden" name="quantity" value="<?= $items[0]->quantity ?>">
+    <?php else: ?>
+        <?php foreach ($items as $item): ?>
+            <input type="hidden" name="selected[]" value="<?= $item->product_id ?>">
+        <?php endforeach; ?>
+    <?php endif; ?>
+
     <section class="checkout-section">
         <h2>Shipping Address</h2>
         <div class="form checkout-form">
@@ -218,8 +277,12 @@ include '../_head.php';
         <?= err('stock') ?>
 
         <section class="buttons">
-            <button type="submit">Place Order</button>
-            <a href="/cart/cart.php" class="checkout-back">Back to Cart</a>
+            <button type="submit" class="place-order-button">Place Order</button>
+            <?php if ($mode === 'buy_now'): ?>
+                <a href="/product/product.php?id=<?= $items[0]->product_id ?>" class="checkout-back">Back to Product</a>
+            <?php else: ?>
+                <a href="/cart/cart.php" class="checkout-back">Back to Cart</a>
+            <?php endif; ?>
         </section>
     </section>
 </form>

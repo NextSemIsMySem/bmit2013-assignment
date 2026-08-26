@@ -5,10 +5,17 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
 }
 
 /*
- * Creates an order from a set of cart items inside a single DB transaction:
+ * Creates an order from a set of items inside a single DB transaction:
  * decrements stock (guarding against a stale/insufficient quantity), inserts
  * the order + its line items + its payment row, marks the voucher used (if
- * any), upserts the user's default shipping address, and clears their cart.
+ * any), upserts the user's default shipping address, and clears whichever
+ * cart_item rows the order actually covers.
+ *
+ * $cartProductIdsToClear controls that last step: leave it null (the
+ * default) to clear exactly the product_ids in $items — correct for a
+ * normal cart checkout, whether that's the whole cart or a selected
+ * subset. Pass an explicit [] for a "Buy Now" purchase that never touched
+ * cart_item in the first place, so nothing gets deleted from the cart.
  *
  * Throws RuntimeException (and rolls back) if any line no longer has enough
  * stock. Returns the new order_id on success.
@@ -24,7 +31,8 @@ function create_order_from_cart(
     float $subtotal,
     float $shippingFee,
     string $paymentStatus,
-    ?string $transactionReference = null
+    ?string $transactionReference = null,
+    ?array $cartProductIdsToClear = null
 ): int {
     $total = $subtotal - $discountAmount + $shippingFee;
     $orderStatus = $paymentStatus === 'success' ? 'paid' : 'pending';
@@ -122,8 +130,15 @@ function create_order_from_cart(
             ]);
         }
 
-        $clearCart = $db->prepare('DELETE FROM cart_item WHERE user_id = ?');
-        $clearCart->execute([$user->user_id]);
+        $cartProductIdsToClear ??= array_map(fn($item) => $item->product_id, $items);
+
+        if ($cartProductIdsToClear) {
+            $placeholders = implode(',', array_fill(0, count($cartProductIdsToClear), '?'));
+            $clearCart = $db->prepare(
+                "DELETE FROM cart_item WHERE user_id = ? AND product_id IN ($placeholders)"
+            );
+            $clearCart->execute([$user->user_id, ...$cartProductIdsToClear]);
+        }
 
         $db->commit();
 

@@ -332,6 +332,7 @@ document.querySelectorAll('[data-cart-quantity]').forEach(control => {
             minusButton.disabled = result.atMin;
             plusButton.disabled = result.atMax;
             showInfo('Cart updated.');
+            recalcCartSelection();
         } catch (error) {
             minusButton.disabled = false;
             plusButton.disabled = false;
@@ -346,6 +347,70 @@ document.querySelectorAll('[data-cart-quantity]').forEach(control => {
     plusButton.addEventListener('click', () => {
         updateQuantity(Number.parseInt(input.value, 10) + 1);
     });
+});
+
+// Cart item selection (choose which items to check out, Shopee-style)
+const cartSelectAll = document.getElementById('cart-select-all');
+const cartCheckoutButton = document.querySelector('[data-cart-checkout-button]');
+const cartItemCheckboxes = document.querySelectorAll('.cart-item-select');
+
+function recalcCartSelection() {
+    if (!cartItemCheckboxes.length) {
+        return;
+    }
+
+    let total = 0;
+    let count = 0;
+
+    cartItemCheckboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            return;
+        }
+
+        const lineTotal = checkbox.closest('[data-cart-item]')?.querySelector('[data-cart-line-total]');
+        const value = Number.parseFloat((lineTotal?.textContent || '').replace(/[^0-9.]/g, '')) || 0;
+        total += value;
+        count += 1;
+    });
+
+    const countEl = document.querySelector('[data-cart-selected-count]');
+    if (countEl) {
+        countEl.textContent = count;
+    }
+
+    const grandTotal = document.querySelector('[data-cart-grand-total]');
+    if (grandTotal) {
+        grandTotal.textContent = 'RM ' + total.toFixed(2);
+    }
+
+    if (cartCheckoutButton) {
+        cartCheckoutButton.disabled = count === 0;
+    }
+
+    if (cartSelectAll) {
+        const selectable = document.querySelectorAll('.cart-item-select:not(:disabled)');
+        const checked = document.querySelectorAll('.cart-item-select:checked');
+        cartSelectAll.checked = selectable.length > 0 && checked.length === selectable.length;
+        cartSelectAll.indeterminate = checked.length > 0 && checked.length < selectable.length;
+    }
+}
+
+cartSelectAll?.addEventListener('change', () => {
+    document.querySelectorAll('.cart-item-select:not(:disabled)').forEach(checkbox => {
+        checkbox.checked = cartSelectAll.checked;
+    });
+    recalcCartSelection();
+});
+
+cartItemCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', recalcCartSelection);
+});
+
+document.getElementById('cart-form')?.addEventListener('submit', event => {
+    if (!document.querySelectorAll('.cart-item-select:checked').length) {
+        event.preventDefault();
+        showInfo('Please select at least one item to check out.');
+    }
 });
 
 document.querySelectorAll('[data-favourite-star]').forEach(button => {
@@ -740,6 +805,10 @@ function showInfo(message) {
     });
 })();
 
+document.querySelectorAll('[data-print-receipt]').forEach(button => {
+    button.addEventListener('click', () => window.print());
+});
+
 // Cancel-order reason dialog
 (function () {
     const openButton = document.getElementById('cancel-order-open');
@@ -758,4 +827,16 @@ function showInfo(message) {
             reasonNote.hidden = !othersRadio.checked;
         });
     });
+})();
+
+// Admin: reject-cancellation reason dialog
+(function () {
+    const openButton = document.getElementById('reject-cancellation-open');
+    const closeButton = document.getElementById('reject-cancellation-close');
+    const dialog = document.getElementById('reject-cancellation-dialog');
+
+    if (!dialog) return;
+
+    openButton?.addEventListener('click', () => dialog.showModal());
+    closeButton?.addEventListener('click', () => dialog.close());
 })();
