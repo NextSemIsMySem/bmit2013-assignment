@@ -11,18 +11,30 @@ if (is_get()) {
         redirect('/');
     }
 
+    $_REQUEST['username'] = $u->username;
     $_REQUEST['name'] = $u->name;
     $_REQUEST['email'] = $u->email;
 }
 
 if (is_post()) {
+    $username = req('username');
     $name = req('name');
     $email = req('email');
 
-    if ($name === '') {
-        $_err['name'] = 'Name is required.';
-    } elseif (strlen($name) > 100) {
-        $_err['name'] = 'Name must be at most 100 characters.';
+    if ($username === '') {
+        $_err['username'] = 'Username is required.';
+    } elseif (strlen($username) < 5) {
+        $_err['username'] = 'Username must be at least 5 characters.';
+    } elseif (!preg_match('/[A-Za-z]/', $username)) {
+        $_err['username'] = 'Username must contain alphabetic characters.';
+    } elseif (strlen($username) > 50) {
+        $_err['username'] = 'Username must be at most 50 characters.';
+    } elseif (!is_unique('user', 'username', $username, 'user_id', $_user->user_id)) {
+        $_err['username'] = 'Username is already registered.';
+    }
+
+    if (strlen($name) > 50) {
+        $_err['name'] = 'Display name must be at most 50 characters.';
     }
 
     if ($email === '') {
@@ -51,9 +63,10 @@ if (is_post()) {
     }
 
     if (!$_err) {
-        $stm = $_db->prepare('UPDATE user SET name = ?, email = ?, photo = ? WHERE user_id = ?');
-        $stm->execute([$name, $email, $photo, $_user->user_id]);
+        $stm = $_db->prepare('UPDATE user SET username = ?, name = ?, email = ?, photo = ? WHERE user_id = ?');
+        $stm->execute([$username, $name, $email, $photo, $_user->user_id]);
 
+        $_user->username = $username;
         $_user->name = $name;
         $_user->email = $email;
         $_user->photo = $photo;
@@ -71,7 +84,8 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post" enctype="multipart/form-data">
-    <?php html_text('name', 'Name'); ?>
+    <?php html_text('username', 'Username'); ?>
+    <?php html_text('name', 'Display Name'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
     <label for="photo">Photo</label>
     <label class="upload" tabindex="0">
