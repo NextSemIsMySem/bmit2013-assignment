@@ -191,7 +191,8 @@ function auth(...$roles) {
         if ($roles) { if (in_array($_user->role, $roles)) return; }
         else        { return; }
     }
-    redirect('/login.php');
+    // Admin-only pages send you to the admin entrance; everything else to the member login.
+    redirect($roles === ['admin'] ? '/admin/a4mi3.php' : '/login.php');
 }
 
 // ============================================================================
@@ -227,18 +228,28 @@ function base($path = '') {
     return "http://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]/$path";
 }
 
+// Mail credentials live in app/_config.php, which is gitignored so they are
+// never committed. Copy app/_config.sample.php to app/_config.php and fill in
+// your own values.
+function mail_config() {
+    $file = __DIR__ . '/_config.php';
+    return file_exists($file) ? require $file : [];
+}
+
 // Initialize and return mail object
 function get_mail() {
     require_once __DIR__ . '/lib/PHPMailer.php';
     require_once __DIR__ . '/lib/SMTP.php';
+
+    $cfg = mail_config();
 
     $m = new PHPMailer(true);
     $m->isSMTP();
     $m->SMTPAuth = true;
     $m->Host     = 'smtp.gmail.com';
     $m->Port     = 587;
-    $m->Username = 'daryl4work@gmail.com';   // <-- paste our demo Gmail address
-    $m->Password = 'lvnz vgum ocmj hcvc';             // <-- paste the 16-char Gmail App Password
+    $m->Username = $cfg['mail_username'] ?? '';
+    $m->Password = $cfg['mail_password'] ?? '';
     $m->CharSet  = 'utf-8';
     $m->setFrom($m->Username, 'ForgeFit Admin');
     return $m;
