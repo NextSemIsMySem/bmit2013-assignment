@@ -181,3 +181,11 @@ CREATE TABLE IF NOT EXISTS `review` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- 14. Token Table (password reset links)
+CREATE TABLE IF NOT EXISTS `token` (
+    `id`      VARCHAR(100) NOT NULL PRIMARY KEY,   -- sha1(uniqid() . rand())
+    `expire`  DATETIME NOT NULL,
+    `user_id` INT NOT NULL,
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
