@@ -34,6 +34,30 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   (pass $adminActions = [] in that case).
  * - $adminActionsWidth: pixel width for the Action column, overriding the default
  *   120px (useful when $adminActionsRenderer needs more room).
+ * - $adminFilter: ['fields' => [['name' => 'query param name', 'label' =>
+ *   'Field label', 'type' => 'select' (default) or any <input> type like
+ *   'date'/'number'/'text', 'options' => ['value' => 'Option label', ...]
+ *   (for type 'select'), 'placeholder' => optional "no filter" option text,
+ *   default 'All'], ...]]. Adds a "Filter" button beside the search box
+ *   that opens a dialog with the given fields; applying submits them as GET
+ *   params (resetting to page 1), same as search/sort. Leave 'fields' empty
+ *   to still show the button while its filters are being decided later.
+ * - $adminBulkSelect: ['key' => 'row id property', 'storageKey' => unique
+ *   localStorage key for this table, 'selectAllUrl' => optional GET endpoint
+ *   returning a JSON array of every id matching the current search/filter
+ *   (ignoring pagination) — omit to skip the "select all N matching" option,
+ *   'statusKey' => optional row property (e.g. 'availability') stamped onto
+ *   each row checkbox as data-bulk-status, used for the live count below,
+ *   'actions' => [['label' => 'Delete', 'icon' => optional /images/ filename,
+ *   'url' => POST endpoint accepting ids[], 'confirm' => optional confirm
+ *   message, 'class' => optional extra CSS class (e.g. an
+ *   'admin-bulk-bar__action--green' color variant), 'countWhen' => optional
+ *   value — when set, the button label gets " (N)" appended, N being how
+ *   many of the currently-selected rows have that value in 'statusKey'],
+ *   ...]]. Adds a checkbox column and a selection bar (count +
+ *   select-this-page/select-all-matching + the given actions + a built-in
+ *   Cancel that just clears the selection) above the table. Selection
+ *   persists across page navigation via localStorage, keyed by 'storageKey'.
  */
 
 if (!isset($adminColumns, $adminRows, $adminActions)) {
@@ -45,11 +69,13 @@ $adminSort = req('sort');
 $adminDir = req('dir') === 'desc' ? 'desc' : 'asc';
 $adminPaginate ??= false;
 $adminSearch ??= null;
+$adminFilter ??= null;
 $adminToolbarButtons ??= [];
 $adminIconColumns ??= [];
 $adminInlineIcon ??= null;
 $adminActionsRenderer ??= null;
 $adminActionsWidth ??= null;
+$adminBulkSelect ??= null;
 
 if ($adminSearch) {
     $adminSearchName = $adminSearch['name'] ?? 'search';
@@ -58,6 +84,33 @@ if ($adminSearch) {
     $adminSearchValue = req($adminSearchName, '');
     $adminSearchParams = $_GET;
     unset($adminSearchParams[$adminSearchName], $adminSearchParams['page'], $adminSearchParams['per_page']);
+}
+
+if ($adminFilter) {
+    $adminFilter['fields'] ??= [];
+
+    // Hidden inputs carry every current param except the filter fields
+    // themselves and pagination (a new filter should land back on page 1).
+    $adminFilterHiddenParams = $_GET;
+    unset($adminFilterHiddenParams['page'], $adminFilterHiddenParams['per_page']);
+    foreach ($adminFilter['fields'] as $field) {
+        unset($adminFilterHiddenParams[$field['name']]);
+    }
+
+    // Reset clears just the filter fields, keeping search/sort/page as-is.
+    $adminFilterResetParams = $_GET;
+    unset($adminFilterResetParams['page']);
+    foreach ($adminFilter['fields'] as $field) {
+        unset($adminFilterResetParams[$field['name']]);
+    }
+
+    $adminFilterActive = false;
+    foreach ($adminFilter['fields'] as $field) {
+        if (req($field['name'], '') !== '') {
+            $adminFilterActive = true;
+            break;
+        }
+    }
 }
 
 if ($adminPaginate) {
@@ -103,8 +156,9 @@ if ($adminPaginate) {
 }
 ?>
 
-<?php if ($adminSearch || $adminToolbarButtons): ?>
+<?php if ($adminSearch || $adminFilter || $adminToolbarButtons): ?>
     <div class="admin-table-toolbar">
+        <div class="admin-table-toolbar-search-group">
         <?php if ($adminSearch): ?>
             <form class="admin-table-search search-bar" method="get">
                 <?php foreach ($adminSearchParams as $key => $value): ?>
@@ -126,6 +180,60 @@ if ($adminPaginate) {
                 <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
             </form>
         <?php endif; ?>
+        <?php if ($adminFilter): ?>
+            <button
+                type="button"
+                class="btn-blue admin-table-filter-btn<?= $adminFilterActive ? ' admin-table-filter-btn--active' : '' ?>"
+                id="admin-table-filter-btn"
+            >
+                Filter<?= $adminFilterActive ? ' •' : '' ?>
+            </button>
+
+            <dialog id="admin-table-filter-dialog" aria-labelledby="admin-table-filter-title">
+                <p id="admin-table-filter-title">Filter</p>
+                <form class="form admin-table-filter-form" method="get">
+                    <?php foreach ($adminFilterHiddenParams as $key => $value): ?>
+                        <?php if (!is_array($value)): ?>
+                            <input type="hidden" name="<?= encode($key) ?>" value="<?= encode($value) ?>">
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <?php foreach ($adminFilter['fields'] as $field): ?>
+                        <?php
+                            $fieldName = $field['name'];
+                            $fieldLabel = $field['label'] ?? $fieldName;
+                            $fieldType = $field['type'] ?? 'select';
+                            $fieldValue = req($fieldName, '');
+                        ?>
+                        <label for="admin-filter-<?= encode($fieldName) ?>"><?= encode($fieldLabel) ?></label>
+                        <?php if ($fieldType === 'select'): ?>
+                            <select id="admin-filter-<?= encode($fieldName) ?>" name="<?= encode($fieldName) ?>">
+                                <option value=""><?= encode($field['placeholder'] ?? 'All') ?></option>
+                                <?php foreach ($field['options'] ?? [] as $optionValue => $optionLabel): ?>
+                                    <option value="<?= encode($optionValue) ?>" <?= (string) $optionValue === $fieldValue ? 'selected' : '' ?>>
+                                        <?= encode($optionLabel) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php else: ?>
+                            <input
+                                type="<?= encode($fieldType) ?>"
+                                id="admin-filter-<?= encode($fieldName) ?>"
+                                name="<?= encode($fieldName) ?>"
+                                value="<?= encode($fieldValue) ?>"
+                            >
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <?php if (!$adminFilter['fields']): ?>
+                        <p class="field-note full-width-label">No filters configured for this table yet.</p>
+                    <?php endif; ?>
+                    <section class="buttons">
+                        <button type="submit" class="btn-green">Apply</button>
+                        <a class="btn-dark" href="?<?= encode(http_build_query($adminFilterResetParams)) ?>">Reset</a>
+                    </section>
+                </form>
+            </dialog>
+        <?php endif; ?>
+        </div>
         <?php if ($adminToolbarButtons): ?>
             <div class="admin-table-toolbar-actions">
                 <?php foreach ($adminToolbarButtons as $button): ?>
@@ -141,9 +249,58 @@ if ($adminPaginate) {
     </div>
 <?php endif; ?>
 
+<?php if ($adminBulkSelect): ?>
+    <div
+        class="admin-bulk-bar"
+        data-bulk-select
+        data-storage-key="<?= encode($adminBulkSelect['storageKey']) ?>"
+        <?php if (!empty($adminBulkSelect['selectAllUrl'])): ?>data-select-all-url="<?= encode($adminBulkSelect['selectAllUrl']) ?>"<?php endif; ?>
+        hidden
+    >
+        <span class="admin-bulk-bar__count" data-bulk-count>0 selected</span>
+        <button type="button" class="admin-bulk-bar__link" data-bulk-select-page>Select all on this page</button>
+        <?php if (!empty($adminBulkSelect['selectAllUrl'])): ?>
+            <button type="button" class="admin-bulk-bar__link" data-bulk-select-all>Select all <?= (int) ($adminTotal ?? count($adminRows)) ?> matching</button>
+        <?php endif; ?>
+        <div class="admin-bulk-bar__actions">
+            <?php foreach ($adminBulkSelect['actions'] ?? [] as $bulkAction): ?>
+                <button
+                    type="button"
+                    class="admin-bulk-bar__action<?= !empty($bulkAction['class']) ? ' ' . encode($bulkAction['class']) : '' ?>"
+                    data-bulk-action
+                    data-bulk-action-url="<?= encode($bulkAction['url']) ?>"
+                    data-bulk-label="<?= encode($bulkAction['label']) ?>"
+                    <?php if (isset($bulkAction['countWhen'])): ?>data-bulk-count-when="<?= encode($bulkAction['countWhen']) ?>"<?php endif; ?>
+                    <?php if (!empty($bulkAction['confirm'])): ?>data-bulk-action-confirm="<?= encode($bulkAction['confirm']) ?>"<?php endif; ?>
+                    disabled
+                >
+                    <?php if (!empty($bulkAction['icon'])): ?>
+                        <img src="/images/<?= encode($bulkAction['icon']) ?>" alt="">
+                    <?php endif; ?>
+                    <span data-bulk-label-text><?= encode($bulkAction['label']) ?></span>
+                </button>
+            <?php endforeach; ?>
+            <button type="button" class="admin-bulk-bar__action admin-bulk-bar__action--cancel" data-bulk-cancel disabled>Cancel</button>
+        </div>
+    </div>
+
+    <dialog class="admin-bulk-confirm-dialog" data-bulk-confirm-dialog aria-labelledby="admin-bulk-confirm-message">
+        <p id="admin-bulk-confirm-message" data-bulk-confirm-message>Are you sure?</p>
+        <div class="admin-bulk-confirm-dialog__actions">
+            <button type="button" class="btn-dark" data-bulk-confirm-cancel>Cancel</button>
+            <button type="button" class="btn-red" data-bulk-confirm-ok>Confirm</button>
+        </div>
+    </dialog>
+<?php endif; ?>
+
 <table class="admin-table">
     <thead>
         <tr>
+            <?php if ($adminBulkSelect): ?>
+                <th class="admin-table__bulk-select">
+                    <input type="checkbox" data-bulk-select-page-checkbox aria-label="Select all rows on this page">
+                </th>
+            <?php endif; ?>
             <?php foreach ($adminColumns as $field => $label): ?>
                 <?php
                     $isSortedField = $adminSort === $field;
@@ -177,6 +334,19 @@ if ($adminPaginate) {
     <tbody>
         <?php foreach ($adminRowsToDisplay as $row): ?>
             <tr>
+                <?php if ($adminBulkSelect): ?>
+                    <?php $bulkId = is_array($row) ? ($row[$adminBulkSelect['key']] ?? '') : ($row->{$adminBulkSelect['key']} ?? ''); ?>
+                    <?php $bulkStatus = !empty($adminBulkSelect['statusKey']) ? (is_array($row) ? ($row[$adminBulkSelect['statusKey']] ?? '') : ($row->{$adminBulkSelect['statusKey']} ?? '')) : null; ?>
+                    <td class="admin-table__bulk-select">
+                        <input
+                            type="checkbox"
+                            data-bulk-checkbox
+                            value="<?= encode($bulkId) ?>"
+                            <?php if ($bulkStatus !== null): ?>data-bulk-status="<?= encode($bulkStatus) ?>"<?php endif; ?>
+                            aria-label="Select this row"
+                        >
+                    </td>
+                <?php endif; ?>
                 <?php foreach ($adminColumns as $field => $_): ?>
                     <?php $value = is_array($row) ? ($row[$field] ?? '') : ($row->$field ?? ''); ?>
                     <?php if (in_array($field, $adminIconColumns, true)): ?>
@@ -238,7 +408,7 @@ if ($adminPaginate) {
 
         <?php if (!$adminRowsToDisplay): ?>
             <tr>
-                <td colspan="<?= count($adminColumns) + 1 ?>"><?= encode($adminEmptyMessage) ?></td>
+                <td colspan="<?= count($adminColumns) + 1 + ($adminBulkSelect ? 1 : 0) ?>"><?= encode($adminEmptyMessage) ?></td>
             </tr>
         <?php endif; ?>
     </tbody>

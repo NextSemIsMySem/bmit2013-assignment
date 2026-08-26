@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
     `role` ENUM('admin', 'member') NOT NULL DEFAULT 'member',
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
     `photo` VARCHAR(100) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -81,10 +82,10 @@ CREATE TABLE IF NOT EXISTS `wishlist_item` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 8. Voucher Table
-CREATE TABLE IF NOT EXISTS `voucher` (
+-- 8. VoucherConfiguration Table
+CREATE TABLE IF NOT EXISTS `voucher_configuration` (
     `voucher_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `name` VARCHAR(100) NOT NULL,
     `category_id` INT NULL,
     `discount_type` ENUM('fixed', 'percentage') NOT NULL DEFAULT 'fixed',
     `discount_value` DECIMAL(10,2) NULL,
@@ -92,13 +93,22 @@ CREATE TABLE IF NOT EXISTS `voucher` (
     `minimum_spend` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     `start_date` DATETIME NOT NULL,
     `end_date` DATETIME NOT NULL,
-    `status` ENUM('active', 'used', 'expired') NOT NULL DEFAULT 'active',
-    `used_at` DATETIME NULL,
+    `status` ENUM('active', 'disabled', 'expired') NOT NULL DEFAULT 'active',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`category_id`) REFERENCES `category`(`category_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- 9. Order Table
+-- 9. Voucher Table (individual codes batch-generated under a configuration)
+CREATE TABLE IF NOT EXISTS `voucher` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `voucher_id` INT NOT NULL,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `status` ENUM('active', 'used', 'disabled') NOT NULL DEFAULT 'active',
+    `used_at` DATETIME NULL,
+    FOREIGN KEY (`voucher_id`) REFERENCES `voucher_configuration`(`voucher_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 10. Order Table
 CREATE TABLE IF NOT EXISTS `orders` (
     `order_id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL,
@@ -119,10 +129,10 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE RESTRICT,
-    FOREIGN KEY (`voucher_id`) REFERENCES `voucher`(`voucher_id`) ON DELETE SET NULL
+    FOREIGN KEY (`voucher_id`) REFERENCES `voucher`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- 10. OrderProduct Table
+-- 11. OrderProduct Table
 CREATE TABLE IF NOT EXISTS `order_product` (
     `order_id` INT NOT NULL,
     `product_id` INT NOT NULL,
@@ -134,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `order_product` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- 11. Payment Table
+-- 12. Payment Table
 CREATE TABLE IF NOT EXISTS `payment` (
     `payment_id` INT AUTO_INCREMENT PRIMARY KEY,
     `order_id` INT NOT NULL UNIQUE,
@@ -146,7 +156,7 @@ CREATE TABLE IF NOT EXISTS `payment` (
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 12. StockReminder Table
+-- 13. StockReminder Table
 CREATE TABLE IF NOT EXISTS `stock_reminder` (
     `user_id` INT NOT NULL,
     `product_id` INT NOT NULL,

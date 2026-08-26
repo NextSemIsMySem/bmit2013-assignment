@@ -4,7 +4,10 @@ require '_order.php';
 require '_stripe_session.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
+require '../admin/voucher/_voucher_expire.php';
 auth('member');
+
+apply_voucher_expiry($_db);
 
 $shippingFee = 10.00;
 $paymentMethods = [
@@ -29,7 +32,7 @@ if ($mode === 'buy_now') {
     }
 
     $productStmt = $_db->prepare(
-        'SELECT product_id, product_name, price, stock, availability FROM product WHERE product_id = ?'
+        'SELECT product_id, product_name, price, stock, availability, category_id FROM product WHERE product_id = ?'
     );
     $productStmt->execute([$buyProductId]);
     $product = $productStmt->fetch();
@@ -46,12 +49,13 @@ if ($mode === 'buy_now') {
         'product_name' => $product->product_name,
         'price' => $product->price,
         'quantity' => $buyQuantity,
+        'category_id' => $product->category_id,
     ]];
 } else {
     $mode = 'cart';
     $selectedIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_REQUEST['selected'] ?? [])))));
 
-    $sql = 'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, ci.quantity
+    $sql = 'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, p.category_id, ci.quantity
             FROM cart_item ci
             JOIN product p ON p.product_id = ci.product_id
             WHERE ci.user_id = ?';
@@ -140,14 +144,22 @@ if (is_post()) {
 
     if ($voucherCode !== '') {
         $voucherStmt = $_db->prepare(
-            "SELECT * FROM voucher
-             WHERE code = ? AND status = 'active' AND NOW() BETWEEN start_date AND end_date"
+            "SELECT v.id, v.code, v.status, vc.category_id, vc.discount_type, vc.discount_value, vc.discount_percentage, vc.minimum_spend
+             FROM voucher v
+             JOIN voucher_configuration vc ON vc.voucher_id = v.voucher_id
+             WHERE v.code = ? AND v.status = 'active' AND vc.status = 'active' AND NOW() BETWEEN vc.start_date AND vc.end_date"
         );
         $voucherStmt->execute([$voucherCode]);
         $voucher = $voucherStmt->fetch();
 
+        $categoryMatches = $voucher && $voucher->category_id !== null
+            ? array_reduce($items, fn($found, $item) => $found || (int) $item->category_id === (int) $voucher->category_id, false)
+            : true;
+
         if (!$voucher) {
             $_err['voucher_code'] = 'This voucher code is invalid or expired.';
+        } elseif (!$categoryMatches) {
+            $_err['voucher_code'] = 'This voucher only applies to products in a specific category not in your cart.';
         } elseif ($subtotal < $voucher->minimum_spend) {
             $_err['voucher_code'] = 'Minimum spend of RM ' . number_format($voucher->minimum_spend, 2) . ' not met.';
         } else {
