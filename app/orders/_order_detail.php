@@ -15,7 +15,6 @@ if (!isset($order, $items, $payment)) {
 }
 
 require_once __DIR__ . '/_status.php';
-require_once __DIR__ . '/../product/_stars.php';
 
 $paymentMethods = [
     'cod' => 'Cash on Delivery',
@@ -23,15 +22,6 @@ $paymentMethods = [
 ];
 
 $total = $order->subtotal - $order->discount_amount + $order->shipping_fee;
-
-$reviewsByProduct = [];
-if ($order->status === 'completed') {
-    $reviewStmt = $_db->prepare('SELECT product_id, rating FROM review WHERE order_id = ?');
-    $reviewStmt->execute([$order->order_id]);
-    foreach ($reviewStmt->fetchAll() as $review) {
-        $reviewsByProduct[$review->product_id] = $review->rating;
-    }
-}
 ?>
 
 <?php if ($order->status === 'cancelled'): ?>
@@ -98,17 +88,6 @@ if ($order->status === 'completed') {
             <div class="order-card-item-info">
                 <p class="order-card-item-name"><?= encode($item->product_name) ?></p>
                 <p class="order-card-item-qty">x<?= encode($item->quantity) ?> &middot; RM <?= encode(number_format($item->unit_price, 2)) ?> each</p>
-                <?php if ($order->status === 'completed'): ?>
-                    <?php if (isset($reviewsByProduct[$item->product_id])): ?>
-                        <a class="order-item-review-link" href="/orders/review.php?order_id=<?= $order->order_id ?>&product_id=<?= $item->product_id ?>">
-                            <?= render_stars($reviewsByProduct[$item->product_id]) ?> Edit Review
-                        </a>
-                    <?php else: ?>
-                        <a class="order-item-review-link" href="/orders/review.php?order_id=<?= $order->order_id ?>&product_id=<?= $item->product_id ?>">
-                            Rate Product
-                        </a>
-                    <?php endif; ?>
-                <?php endif; ?>
             </div>
             <p class="order-card-item-price">RM <?= encode(number_format($item->final_price, 2)) ?></p>
         </div>

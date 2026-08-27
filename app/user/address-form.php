@@ -2,6 +2,17 @@
 require '../_base.php';
 auth();
 
+// Only follow `return` back to a local page (never an absolute/external
+// URL) — this is reachable from checkout when the buyer has no saved
+// address yet, so they land back where they were instead of the plain
+// address list.
+function safe_local_url($url, $default) {
+    if ($url !== '' && str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, '://')) {
+        return $url;
+    }
+    return $default;
+}
+
 function address_input($name, $label, $value = '') {
     echo '<label for="address-' . encode($name) . '">' . encode($label) . '</label>';
     echo '<input id="address-' . encode($name) . '" name="' . encode($name) . '" value="' . encode($value) . '">';
@@ -9,12 +20,13 @@ function address_input($name, $label, $value = '') {
 }
 
 $addressId = filter_var($_REQUEST['address_id'] ?? $_GET['edit'] ?? '', FILTER_VALIDATE_INT);
+$returnUrl = safe_local_url(req('return'), '/user/address.php');
 $editAddress = null;
 if ($addressId) {
     $stm = $_db->prepare('SELECT * FROM address WHERE address_id = ? AND user_id = ? AND deleted_at IS NULL');
     $stm->execute([$addressId, $_user->user_id]);
     $editAddress = $stm->fetch();
-    if (!$editAddress) redirect('/user/address.php');
+    if (!$editAddress) redirect($returnUrl);
 }
 
 if (is_post()) {
@@ -57,7 +69,7 @@ if (is_post()) {
         }
         $_db->commit();
         temp('info', $addressId ? 'Address updated.' : 'Address added.');
-        redirect('/user/address.php');
+        redirect($returnUrl);
     }
 
     $editAddress = (object) compact('label', 'street', 'city', 'state', 'postalCode', 'country', 'latitude', 'longitude', 'isDefault');
@@ -71,8 +83,8 @@ if (!$editAddress) {
 
 $_title = $addressId ? 'Edit Shipping Address' : 'Add Shipping Address';
 $_navSection = 'settings';
-$_backUrl = '/user/address.php';
-$_backLabel = 'Back to Addresses';
+$_backUrl = $returnUrl;
+$_backLabel = str_starts_with($returnUrl, '/cart/checkout.php') ? 'Back to Checkout' : 'Back to Addresses';
 $_googleMaps = true;
 include '../_head.php';
 ?>
@@ -80,6 +92,7 @@ include '../_head.php';
 <p>Choose a location on the map or search for your shipping address.</p>
 <form class="form address-form" method="post">
     <input type="hidden" name="address_id" value="<?= $addressId ? (int) $addressId : '' ?>">
+    <input type="hidden" name="return" value="<?= encode($returnUrl) ?>">
     <div class="address-map-picker">
         <label for="address-search">Choose Location</label>
         <input id="address-search" type="search" placeholder="Search for an address on Google Maps" autocomplete="off">
@@ -95,7 +108,7 @@ include '../_head.php';
     <input type="hidden" id="address-latitude" name="latitude" value="<?= encode($editAddress->latitude) ?>">
     <input type="hidden" id="address-longitude" name="longitude" value="<?= encode($editAddress->longitude) ?>">
     <label class="checkbox-label"><input type="checkbox" name="is_default" value="1" <?= $editAddress->is_default ? 'checked' : '' ?>> Make this my default shipping address</label>
-    <section class="buttons"><button class="btn-green" type="submit"><?= $addressId ? 'Update Address' : 'Add Address' ?></button><a class="btn-gray" href="/user/address.php">Cancel</a></section>
+    <section class="buttons"><button class="btn-green" type="submit"><?= $addressId ? 'Update Address' : 'Add Address' ?></button><a class="btn-gray" href="<?= encode($returnUrl) ?>">Cancel</a></section>
 </form>
 
 <?php include '../_foot.php'; ?>
