@@ -11,7 +11,7 @@ function address_input($name, $label, $value = '') {
 $addressId = filter_var($_REQUEST['address_id'] ?? $_GET['edit'] ?? '', FILTER_VALIDATE_INT);
 $editAddress = null;
 if ($addressId) {
-    $stm = $_db->prepare('SELECT * FROM address WHERE address_id = ? AND user_id = ?');
+    $stm = $_db->prepare('SELECT * FROM address WHERE address_id = ? AND user_id = ? AND deleted_at IS NULL');
     $stm->execute([$addressId, $_user->user_id]);
     $editAddress = $stm->fetch();
     if (!$editAddress) redirect('/user/address.php');

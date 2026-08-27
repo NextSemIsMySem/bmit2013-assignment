@@ -83,7 +83,7 @@ foreach ($items as $item) {
 }
 
 if (is_get()) {
-    $addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? AND is_default = 1 LIMIT 1');
+    $addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL LIMIT 1');
     $addressStmt->execute([$_user->user_id]);
     $defaultAddress = $addressStmt->fetch();
 

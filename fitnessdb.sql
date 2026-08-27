@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `address` (
     `latitude` DECIMAL(10,7) NULL,
     `longitude` DECIMAL(10,7) NULL,
     `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
+    `deleted_at` TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

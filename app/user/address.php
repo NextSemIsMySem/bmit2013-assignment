@@ -5,7 +5,7 @@ auth();
 if (is_post()) {
     $action = req('action');
     $addressId = filter_var(req('address_id'), FILTER_VALIDATE_INT);
-    $stm = $_db->prepare('SELECT address_id FROM address WHERE address_id = ? AND user_id = ?');
+    $stm = $_db->prepare('SELECT address_id FROM address WHERE address_id = ? AND user_id = ? AND deleted_at IS NULL');
     $stm->execute([$addressId, $_user->user_id]);
 
     if (!$stm->fetchColumn()) {
@@ -15,18 +15,18 @@ if (is_post()) {
         $_db->prepare('UPDATE address SET is_default = 1 WHERE address_id = ? AND user_id = ?')->execute([$addressId, $_user->user_id]);
         temp('info', 'Default address updated.');
     } elseif ($action === 'delete') {
-        $_db->prepare('DELETE FROM address WHERE address_id = ? AND user_id = ?')->execute([$addressId, $_user->user_id]);
-        $defaultExists = $_db->prepare('SELECT COUNT(*) FROM address WHERE user_id = ? AND is_default = 1');
+        $_db->prepare('UPDATE address SET deleted_at = NOW(), is_default = 0 WHERE address_id = ? AND user_id = ? AND deleted_at IS NULL')->execute([$addressId, $_user->user_id]);
+        $defaultExists = $_db->prepare('SELECT COUNT(*) FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL');
         $defaultExists->execute([$_user->user_id]);
         if (!$defaultExists->fetchColumn()) {
-            $_db->prepare('UPDATE address SET is_default = 1 WHERE user_id = ? ORDER BY address_id LIMIT 1')->execute([$_user->user_id]);
+            $_db->prepare('UPDATE address SET is_default = 1 WHERE user_id = ? AND deleted_at IS NULL ORDER BY address_id LIMIT 1')->execute([$_user->user_id]);
         }
         temp('info', 'Address deleted.');
     }
     redirect('/user/address.php');
 }
 
-$addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? ORDER BY is_default DESC, address_id DESC');
+$addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? AND deleted_at IS NULL ORDER BY is_default DESC, address_id DESC');
 $addressStmt->execute([$_user->user_id]);
 $addresses = $addressStmt->fetchAll();
 

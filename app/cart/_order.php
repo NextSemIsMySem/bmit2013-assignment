@@ -99,7 +99,7 @@ function create_order_from_cart(
             $voucherUpdate->execute([$voucher->id]);
         }
 
-        $existingAddress = $db->prepare('SELECT address_id FROM address WHERE user_id = ? AND is_default = 1');
+        $existingAddress = $db->prepare('SELECT address_id FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL');
         $existingAddress->execute([$user->user_id]);
         $addressId = $existingAddress->fetchColumn();
 
