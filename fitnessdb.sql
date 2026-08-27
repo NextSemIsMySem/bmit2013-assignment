@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS `address` (
     `state` VARCHAR(100) NOT NULL,
     `postal_code` VARCHAR(20) NOT NULL,
     `country` VARCHAR(100) NOT NULL,
+    `label` VARCHAR(50) NOT NULL DEFAULT 'Address',
+    `latitude` DECIMAL(10,7) NULL,
+    `longitude` DECIMAL(10,7) NULL,
     `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;

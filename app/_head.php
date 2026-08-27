@@ -8,6 +8,9 @@
     <?php if (!empty($_photoEditor)): ?>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
     <?php endif; ?>
+    <?php if (!empty($_googleMaps) && google_maps_api_key() !== ''): ?>
+        <script src="https://maps.googleapis.com/maps/api/js?key=<?= encode(google_maps_api_key()) ?>&libraries=places" defer></script>
+    <?php endif; ?>
     <link rel="icon" href="data:,">
     <link rel="shortcut icon" href="data:,">
     <script>const isLoggedIn = <?= $_user ? 'true' : 'false' ?>;</script>

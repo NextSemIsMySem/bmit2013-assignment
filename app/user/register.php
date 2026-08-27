@@ -89,6 +89,7 @@ if (is_post()) {
 $_title = 'Register';
 $_backUrl = '/';
 $_backLabel = 'Back to Home';
+$_photoEditor = true;
 include '../_head.php';
 ?>
 
@@ -126,5 +127,23 @@ include '../_head.php';
         <button type="reset">Reset</button>
     </section>
 </form>
+
+<dialog class="photo-editor-dialog" id="photo-editor-dialog" aria-labelledby="photo-editor-title">
+    <h2 id="photo-editor-title">Edit Profile Photo</h2>
+    <div class="photo-editor-canvas">
+        <img id="photo-editor-image" alt="Profile photo preview">
+    </div>
+    <div class="photo-editor-tools" aria-label="Photo editing tools">
+        <button type="button" data-photo-editor-action="rotate-left" title="Rotate left">&#8634;</button>
+        <button type="button" data-photo-editor-action="rotate-right" title="Rotate right">&#8635;</button>
+        <button type="button" data-photo-editor-action="flip-horizontal" title="Flip horizontally">&#8644;</button>
+        <button type="button" data-photo-editor-action="flip-vertical" title="Flip vertically">&#8597;</button>
+        <button type="button" data-photo-editor-action="reset">Reset</button>
+    </div>
+    <div class="photo-editor-actions">
+        <button type="button" class="btn-dark" data-photo-editor-action="cancel">Cancel</button>
+        <button type="button" class="btn-green" data-photo-editor-action="apply">Apply</button>
+    </div>
+</dialog>
 
 <?php include '../_foot.php'; ?>

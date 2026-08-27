@@ -7,4 +7,5 @@
 return [
     'mail_username' => 'YOUR_DEMO_ACCOUNT@gmail.com',
     'mail_password' => 'YOUR_APP_PASSWORD',
+    'google_maps_api_key' => 'YOUR_GOOGLE_MAPS_API_KEY',
 ];

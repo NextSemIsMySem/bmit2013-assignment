@@ -263,6 +263,11 @@ function mail_config() {
     return file_exists($file) ? require $file : [];
 }
 
+function google_maps_api_key() {
+    $config = mail_config();
+    return $config['google_maps_api_key'] ?? '';
+}
+
 // Initialize and return mail object
 function get_mail() {
     require_once __DIR__ . '/lib/PHPMailer.php';
