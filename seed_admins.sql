@@ -20,7 +20,7 @@
 
 USE `fitnessdb`;
 
-INSERT INTO `user` (`username`, `name`, `email`, `password`, `role`, `active`, `created_at`) VALUES
-    ('superadmin', 'Super Admin', 'superadmin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'superadmin', 1, '2025-01-01 09:00:00'),
-    ('ops.admin', 'Operations Admin', 'ops.admin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'admin', 1, '2025-01-02 09:00:00'),
-    ('support.admin', 'Support Admin', 'support.admin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'admin', 1, '2025-01-03 09:00:00');
+INSERT INTO `user` (`username`, `name`, `email`, `password`, `role`, `active`, `email_verified`, `created_at`) VALUES
+    ('superadmin', 'Super Admin', 'superadmin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'superadmin', 1, 1, '2025-01-01 09:00:00'),
+    ('ops.admin', 'Operations Admin', 'ops.admin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'admin', 1, 1, '2025-01-02 09:00:00'),
+    ('support.admin', 'Support Admin', 'support.admin@forgefit.test', 'a29c57c6894dee6e8251510d58c07078ee3f49bf', 'admin', 1, 1, '2025-01-03 09:00:00');
