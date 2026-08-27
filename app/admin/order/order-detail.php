@@ -52,7 +52,7 @@ include '../../_head.php';
 <section class="order-confirmation admin-order-detail">
     <section class="order-detail-card admin-order-customer">
         <h3>Customer</h3>
-        <p><?= encode($order->customer_name) ?> (<?= encode($order->customer_username) ?>)</p>
+        <p><a href="/admin/member/detail.php?id=<?= (int) $order->user_id ?>"><?= encode($order->customer_name) ?> (<?= encode($order->customer_username) ?>)</a></p>
         <p><?= encode($order->customer_email) ?></p>
     </section>
 
