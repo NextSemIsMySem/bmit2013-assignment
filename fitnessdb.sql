@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(50) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
-    `role` ENUM('admin', 'member') NOT NULL DEFAULT 'member',
+    `role` ENUM('superadmin', 'admin', 'member') NOT NULL DEFAULT 'member',
     `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `email_verified` TINYINT(1) NOT NULL DEFAULT 1,
     `photo` VARCHAR(100) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -28,7 +29,11 @@ CREATE TABLE IF NOT EXISTS `address` (
     `state` VARCHAR(100) NOT NULL,
     `postal_code` VARCHAR(20) NOT NULL,
     `country` VARCHAR(100) NOT NULL,
+    `label` VARCHAR(50) NOT NULL DEFAULT 'Address',
+    `latitude` DECIMAL(10,7) NULL,
+    `longitude` DECIMAL(10,7) NULL,
     `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
+    `deleted_at` TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -179,5 +184,14 @@ CREATE TABLE IF NOT EXISTS `review` (
     UNIQUE KEY `order_product_unique` (`order_id`, `product_id`),
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE,
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 14. Token Table (password reset links)
+CREATE TABLE IF NOT EXISTS `token` (
+    `id`      VARCHAR(100) NOT NULL PRIMARY KEY,   -- sha1(uniqid() . rand())
+    `expire`  DATETIME NOT NULL,
+    `user_id` INT NOT NULL,
+    `type`    ENUM('reset', 'verification') NOT NULL DEFAULT 'reset',
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;

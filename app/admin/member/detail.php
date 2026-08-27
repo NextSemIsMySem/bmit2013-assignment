@@ -3,7 +3,8 @@ require '../../_base.php';
 auth('admin');
 
 $id = req('id');
-$stmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
+// Members only — admin accounts are managed under admin/administrator/.
+$stmt = $_db->prepare("SELECT * FROM user WHERE user_id = ? AND role = 'member'");
 $stmt->execute([$id]);
 $member = $stmt->fetch();
 

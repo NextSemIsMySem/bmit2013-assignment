@@ -4,7 +4,7 @@ require 'admin/voucher/_voucher_expire.php';
 
 apply_voucher_expiry($_db);
 
-if ($_user?->role === 'admin') {
+if (is_admin()) {
     redirect('/admin/member/index.php');
 }
 

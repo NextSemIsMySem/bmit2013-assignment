@@ -385,6 +385,153 @@ $('input[type="file"]').on('change', function () {
     }
 });
 
+const photoEditorDialog = document.querySelector('#photo-editor-dialog');
+const photoEditorInput = document.querySelector('#photo');
+const photoEditorImage = document.querySelector('#photo-editor-image');
+const photoEditorPreview = document.querySelector('label.upload img');
+
+if (photoEditorDialog && photoEditorInput && photoEditorImage && window.Cropper) {
+    let cropper;
+    let originalPreviewUrl = photoEditorPreview?.src;
+
+    const closePhotoEditor = () => {
+        cropper?.destroy();
+        cropper = null;
+        photoEditorDialog.close();
+    };
+
+    photoEditorInput.addEventListener('change', () => {
+        const file = photoEditorInput.files?.[0];
+
+        if (!file || !file.type.startsWith('image/')) {
+            return;
+        }
+
+        originalPreviewUrl = photoEditorPreview?.src;
+        photoEditorImage.src = URL.createObjectURL(file);
+        photoEditorImage.onload = () => {
+            cropper?.destroy();
+            cropper = new Cropper(photoEditorImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                background: false,
+            });
+            photoEditorDialog.showModal();
+        };
+    });
+
+    photoEditorDialog.querySelectorAll('[data-photo-editor-action]').forEach(button => {
+        button.addEventListener('click', () => {
+            const action = button.dataset.photoEditorAction;
+
+            if (action === 'cancel') {
+                photoEditorInput.value = '';
+                if (photoEditorPreview && originalPreviewUrl) {
+                    photoEditorPreview.src = originalPreviewUrl;
+                }
+                closePhotoEditor();
+            } else if (action === 'apply') {
+                cropper?.getCroppedCanvas({width: 800, height: 800}).toBlob(blob => {
+                    if (!blob) {
+                        return;
+                    }
+
+                    const editedFile = new File([blob], 'profile-photo.jpg', {type: 'image/jpeg'});
+                    const transfer = new DataTransfer();
+                    transfer.items.add(editedFile);
+                    photoEditorInput.files = transfer.files;
+                    if (photoEditorPreview) {
+                        photoEditorPreview.src = URL.createObjectURL(editedFile);
+                    }
+                    closePhotoEditor();
+                }, 'image/jpeg', 0.9);
+            } else if (action === 'rotate-left') {
+                cropper?.rotate(-90);
+            } else if (action === 'rotate-right') {
+                cropper?.rotate(90);
+            } else if (action === 'flip-horizontal') {
+                cropper?.scaleX(-(cropper.getData().scaleX || 1));
+            } else if (action === 'flip-vertical') {
+                cropper?.scaleY(-(cropper.getData().scaleY || 1));
+            } else if (action === 'reset') {
+                cropper?.reset();
+            }
+        });
+    });
+
+    photoEditorDialog.addEventListener('cancel', event => {
+        event.preventDefault();
+        photoEditorDialog.querySelector('[data-photo-editor-action="cancel"]').click();
+    });
+}
+
+const addressMap = document.querySelector('#address-map');
+
+if (addressMap) {
+    window.addEventListener('load', () => {
+        if (!window.google?.maps) {
+            return;
+        }
+
+        const latitudeInput = document.querySelector('#address-latitude');
+        const longitudeInput = document.querySelector('#address-longitude');
+        const streetInput = document.querySelector('#address-street');
+        const cityInput = document.querySelector('#address-city');
+        const stateInput = document.querySelector('#address-state');
+        const postalCodeInput = document.querySelector('#address-postal_code');
+        const countryInput = document.querySelector('#address-country');
+        const searchInput = document.querySelector('#address-search');
+        const existingLatitude = Number(addressMap.dataset.latitude);
+        const existingLongitude = Number(addressMap.dataset.longitude);
+        const initialLocation = Number.isFinite(existingLatitude) && Number.isFinite(existingLongitude)
+            && existingLatitude !== 0 && existingLongitude !== 0
+            ? {lat: existingLatitude, lng: existingLongitude}
+            : {lat: 3.1390, lng: 101.6869};
+        const map = new google.maps.Map(addressMap, {center: initialLocation, zoom: 15, mapTypeControl: false, streetViewControl: false});
+        const marker = new google.maps.Marker({map, position: initialLocation, draggable: true});
+        const geocoder = new google.maps.Geocoder();
+
+        const fillAddress = result => {
+            const components = {};
+            result.address_components?.forEach(component => component.types.forEach(type => { components[type] = component.long_name; }));
+            streetInput.value = [components.street_number, components.route].filter(Boolean).join(' ');
+            cityInput.value = components.locality || components.postal_town || components.administrative_area_level_2 || '';
+            stateInput.value = components.administrative_area_level_1 || '';
+            postalCodeInput.value = components.postal_code || '';
+            countryInput.value = components.country || '';
+            latitudeInput.value = result.geometry.location.lat();
+            longitudeInput.value = result.geometry.location.lng();
+        };
+
+        const chooseLocation = location => {
+            marker.setPosition(location);
+            map.panTo(location);
+            geocoder.geocode({location}, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    fillAddress(results[0]);
+                }
+            });
+        };
+
+        map.addListener('click', event => chooseLocation(event.latLng));
+        marker.addListener('dragend', event => chooseLocation(event.latLng));
+
+        const autocomplete = new google.maps.places.Autocomplete(searchInput, {fields: ['address_components', 'geometry'], types: ['address']});
+        autocomplete.bindTo('bounds', map);
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry?.location) {
+                return;
+            }
+            map.setZoom(17);
+            marker.setPosition(place.geometry.location);
+            map.panTo(place.geometry.location);
+            fillAddress(place);
+        });
+    });
+}
+
 const productMainImage = document.querySelector('#product-main-image');
 const productThumbs = document.querySelectorAll('.product-detail-thumb');
 const productImageCounter = document.querySelector('#product-image-counter');

@@ -1290,6 +1290,131 @@ label.upload img {
     cursor: pointer;
 }
 
+.photo-editor-dialog {
+    width: min(720px, 90vw);
+    padding: 20px;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.photo-editor-dialog h2 {
+    margin: 0 0 16px;
+    color: #1a1a2e;
+    font-size: 20px;
+}
+
+.photo-editor-canvas {
+    max-height: 60vh;
+    background: #1a1a2e;
+}
+
+.photo-editor-canvas img {
+    display: block;
+    max-width: 100%;
+    max-height: 60vh;
+}
+
+.photo-editor-tools, .photo-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.photo-editor-tools button {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 6px 10px;
+}
+
+.photo-editor-actions {
+    justify-content: flex-end;
+}
+
+.photo-editor-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.settings-addresses {
+    max-width: 900px;
+    margin-top: 28px;
+}
+
+.settings-addresses h2 {
+    margin-bottom: 8px;
+}
+
+.address-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 20px 0 28px;
+}
+
+.address-card {
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #d7dbe5;
+    border-radius: 6px;
+}
+
+.address-card h3 {
+    margin: 0;
+    color: #1a1a2e;
+}
+
+.address-card p {
+    line-height: 1.5;
+}
+
+.address-default {
+    display: inline-block;
+    padding: 3px 7px;
+    color: #19692c;
+    background: #dff0df;
+    border-radius: 3px;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.address-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.address-card-actions form {
+    margin: 0;
+}
+
+.address-form {
+    max-width: 700px;
+}
+
+.address-map-picker {
+    grid-column: 1 / -1;
+}
+
+#address-map {
+    width: 100%;
+    height: 320px;
+    margin-top: 8px;
+    border: 1px solid #d7dbe5;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    grid-column: 1 / -1;
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
 .form > .product-image-field {
     display: block;
 }
@@ -1659,6 +1784,29 @@ label.upload img {
     margin-top: 14px;
 }
 
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 14px;
+    color: #1a1a2e;
+    font-size: 28px;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.title > .back-link {
+    flex-shrink: 0;
+    margin: 0 4px 0 0;
+}
+
+.back-link:hover, .back-link:focus-visible {
+    color: #e74c3c;
+    text-decoration: underline;
+}
+
 .err {
     color: red;
     font-size: 13px;
@@ -1763,6 +1911,10 @@ label.upload img {
 .admin-table tbody tr:hover td {
     color: #ffffff;
     font-weight: 700;
+}
+
+.admin-table tbody tr:hover .admin-action-button img {
+    filter: brightness(0) invert(1);
 }
 
 .admin-table__actions {

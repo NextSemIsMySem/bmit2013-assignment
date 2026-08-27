@@ -1,0 +1,19 @@
+<?php
+require '../_base.php';
+auth();
+
+$_title = 'Settings';
+$_navSection = 'settings';
+$_backUrl = '/';
+$_backLabel = 'Back to Home';
+include '../_head.php';
+?>
+
+<section class="buttons">
+    <a class="btn-green" href="/user/profile.php">Change Profile</a>
+    <a class="btn-green" href="/user/change-password.php">Change Password</a>
+    <a class="btn-green" href="/user/address.php">Manage Shipping Addresses</a>
+</section>
+
+<?php
+include '../_foot.php';

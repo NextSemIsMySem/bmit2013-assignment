@@ -30,3 +30,7 @@ INSERT INTO `user` (`username`, `name`, `email`, `password`, `role`, `created_at
     ('hafiz.omar', 'Hafiz Omar', 'hafiz.omar@example.com', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'member', '2025-05-09 09:00:00'),
     ('linda.chong', 'Linda Chong', 'linda.chong@example.com', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'member', '2025-05-15 09:00:00'),
     ('sarah.lim', 'Sarah Lim', 'sarah.lim@example.com', '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8', 'member', '2025-05-20 09:00:00');
+
+UPDATE `user`
+SET `email_verified` = 1
+WHERE `email` LIKE '%@example.com';

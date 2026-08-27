@@ -39,8 +39,8 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
-    } elseif (strlen($email) > 100) {
-        $_err['email'] = 'Email must be at most 100 characters.';
+    } elseif (strlen($email) > 255) {
+        $_err['email'] = 'Email must be at most 255 characters.';
     } elseif (!is_email($email)) {
         $_err['email'] = 'Please enter a valid email address.';
     } elseif (!is_unique('user', 'email', $email, 'user_id', $_user->user_id)) {
@@ -78,8 +78,11 @@ if (is_post()) {
 
 $photoUrl = $_user->photo ? '/photos/' . encode($_user->photo) : '/images/profile.png';
 
-$_title = 'My Profile';
-$_navSection = 'profile';
+$_title = 'Profile Settings';
+$_navSection = 'settings';
+$_backUrl = '/user/settings.php';
+$_backLabel = 'Back to Settings';
+$_photoEditor = true;
 include '../_head.php';
 ?>
 
@@ -98,6 +101,24 @@ include '../_head.php';
         <button type="reset">Reset</button>
     </section>
 </form>
+
+<dialog class="photo-editor-dialog" id="photo-editor-dialog" aria-labelledby="photo-editor-title">
+    <h2 id="photo-editor-title">Edit Profile Photo</h2>
+    <div class="photo-editor-canvas">
+        <img id="photo-editor-image" alt="Profile photo preview">
+    </div>
+    <div class="photo-editor-tools" aria-label="Photo editing tools">
+        <button type="button" data-photo-editor-action="rotate-left" title="Rotate left">&#8634;</button>
+        <button type="button" data-photo-editor-action="rotate-right" title="Rotate right">&#8635;</button>
+        <button type="button" data-photo-editor-action="flip-horizontal" title="Flip horizontally">&#8644;</button>
+        <button type="button" data-photo-editor-action="flip-vertical" title="Flip vertically">&#8597;</button>
+        <button type="button" data-photo-editor-action="reset">Reset</button>
+    </div>
+    <div class="photo-editor-actions">
+        <button type="button" class="btn-dark" data-photo-editor-action="cancel">Cancel</button>
+        <button type="button" class="btn-green" data-photo-editor-action="apply">Apply</button>
+    </div>
+</dialog>
 
 <?php
 include '../_foot.php';
