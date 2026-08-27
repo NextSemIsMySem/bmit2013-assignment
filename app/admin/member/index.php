@@ -1,6 +1,9 @@
 <?php
 require '../../_base.php';
+require '../voucher/_voucher_expire.php';
 auth('admin');
+
+apply_voucher_expiry($_db);
 
 require '../../lib/SimplePager.php';
 
@@ -30,8 +33,11 @@ in_array($pageSize, $pageSizes, true) || $pageSize = 10;
 $page = (int) req('page', 1);
 $page < 1 && $page = 1;
 
+// The role filter must be parenthesised against the OR'd search terms,
+// otherwise AND/OR precedence lets admin accounts leak into the member list.
 $sql = "SELECT * FROM user
-        WHERE username LIKE ? OR name LIKE ? OR email LIKE ?
+        WHERE role = 'member'
+          AND (username LIKE ? OR name LIKE ? OR email LIKE ?)
         ORDER BY $sort $dir";
 $p = new SimplePager($sql, ["%$name%", "%$name%", "%$name%"], $pageSize, $page);
 
@@ -62,11 +68,41 @@ $adminActions = [
         'url'    => fn($row) => 'update.php?id=' . $row->user_id,
     ],
     [
-        'label'   => 'Delete member',
-        'icon'    => 'disable.png',
+        'label'   => fn($row) => $row->active ? 'Disable member' : 'Activate member',
+        'icon'    => fn($row) => $row->active ? 'disable.png' : 'activate.png',
         'method'  => 'post',
-        'url'     => fn($row) => 'delete.php?id=' . $row->user_id,
-        'confirm' => 'Delete this member?',
+        'url'     => fn($row) => ($row->active ? 'member-disable.php' : 'member-activate.php') . '?id=' . $row->user_id,
+        'confirm' => fn($row) => $row->active ? 'Disable this member?' : 'Activate this member?',
+        'class'   => fn($row) => $row->active ? '' : 'admin-action-button--inactive',
+    ],
+];
+$adminBulkSelect = [
+    'key'          => 'user_id',
+    'storageKey'   => 'bulk-select-members',
+    'selectAllUrl' => 'member-ids.php',
+    'statusKey'    => 'active',
+    'actions'      => [
+        [
+            'label'     => 'Disable',
+            'icon'      => 'disable.png',
+            'url'       => 'member-bulk-disable.php',
+            'confirm'   => 'Disable the selected members?',
+            'countWhen' => 1,
+        ],
+        [
+            'label'     => 'Activate',
+            'icon'      => 'activate.png',
+            'url'       => 'member-bulk-activate.php',
+            'confirm'   => 'Activate the selected members?',
+            'class'     => 'admin-bulk-bar__action--green',
+            'countWhen' => 0,
+        ],
+        [
+            'label'   => 'Delete',
+            'icon'    => 'delete.png',
+            'url'     => 'member-bulk-delete.php',
+            'confirm' => 'Delete the selected members? Members with orders will be skipped.',
+        ],
     ],
 ];
 include '../admin_table.php';

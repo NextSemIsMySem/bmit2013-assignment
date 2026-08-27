@@ -59,7 +59,7 @@ function create_order_from_cart(
         );
         $orderStmt->execute([
             $user->user_id,
-            $voucher->voucher_id ?? null,
+            $voucher->id ?? null,
             $subtotal,
             $shippingFee,
             $discountAmount,
@@ -94,12 +94,12 @@ function create_order_from_cart(
 
         if ($voucher) {
             $voucherUpdate = $db->prepare(
-                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE voucher_id = ?"
+                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ?"
             );
-            $voucherUpdate->execute([$voucher->voucher_id]);
+            $voucherUpdate->execute([$voucher->id]);
         }
 
-        $existingAddress = $db->prepare('SELECT address_id FROM address WHERE user_id = ? AND is_default = 1');
+        $existingAddress = $db->prepare('SELECT address_id FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL');
         $existingAddress->execute([$user->user_id]);
         $addressId = $existingAddress->fetchColumn();
 

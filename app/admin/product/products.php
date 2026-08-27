@@ -46,6 +46,9 @@ include '../../_head.php';
 $adminColumns = $fields;
 $adminRows = $products;
 $adminPaginate = true;
+$adminFilter = [
+    'fields' => [],
+];
 $adminSearch = [
     'name' => 'name',
     'label' => 'Search products',
@@ -72,6 +75,29 @@ $adminActions = [
         'url'     => fn($row) => ($row->availability ? 'product-disable.php' : 'product-activate.php') . '?id=' . $row->product_id,
         'confirm' => fn($row) => $row->availability ? 'Disable this product?' : 'Activate this product?',
         'class'   => fn($row) => $row->availability ? '' : 'admin-action-button--inactive',
+    ],
+];
+$adminBulkSelect = [
+    'key'          => 'product_id',
+    'storageKey'   => 'bulk-select-products',
+    'selectAllUrl' => 'product-ids.php',
+    'statusKey'    => 'availability',
+    'actions'      => [
+        [
+            'label'     => 'Disable',
+            'icon'      => 'disable.png',
+            'url'       => 'product-bulk-disable.php',
+            'confirm'   => 'Disable the selected products?',
+            'countWhen' => 1,
+        ],
+        [
+            'label'     => 'Activate',
+            'icon'      => 'activate.png',
+            'url'       => 'product-bulk-activate.php',
+            'confirm'   => 'Activate the selected products?',
+            'class'     => 'admin-bulk-bar__action--green',
+            'countWhen' => 0,
+        ],
     ],
 ];
 include '../admin_table.php';

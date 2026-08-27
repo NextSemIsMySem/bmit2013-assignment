@@ -175,6 +175,17 @@ function is_email($v) {
     return filter_var($v, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+// Shared password policy for register / reset / change-password / admin create.
+// Returns an error message, or null if the password is acceptable.
+function password_error($password, $label = 'Password') {
+    if ($password === '')                                   return "$label is required.";
+    if (strlen($password) < 8 || strlen($password) > 50)     return "$label must be between 8-50 characters.";
+    $ok = preg_match('/[a-z]/', $password) && preg_match('/[A-Z]/', $password)
+       && preg_match('/[0-9]/', $password) && preg_match('/[^a-zA-Z0-9]/', $password);
+    if (!$ok) return "$label must include upper/lowercase letters, a number and a symbol.";
+    return null;
+}
+
 // ============================================================================
 // Security
 // ============================================================================
@@ -185,13 +196,30 @@ $_user = $_SESSION['user'] ?? null;
 function login($user, $url = '/') { $_SESSION['user'] = $user; redirect($url); }
 function logout($url = '/')       { unset($_SESSION['user']); redirect($url); }
 
+// True for any admin-level account. Use this instead of comparing role to
+// 'admin' directly, so a superadmin is never mistaken for a member.
+// Note this is about admin *level*, not the exact role — auth('superadmin')
+// remains satisfiable only by a superadmin.
+function is_admin($user = null) {
+    global $_user;
+    $user ??= $_user;
+    return $user && in_array($user->role, ['admin', 'superadmin'], true);
+}
+
 function auth(...$roles) {
     global $_user;
     if ($_user) {
-        if ($roles) { if (in_array($_user->role, $roles)) return; }
-        else        { return; }
+        if ($roles) {
+            if (in_array($_user->role, $roles)) return;
+            // A superadmin satisfies any admin-level requirement.
+            if (in_array('admin', $roles) && $_user->role === 'superadmin') return;
+        } else {
+            return;
+        }
     }
-    redirect('/login.php');
+    // Admin-level pages send you to the admin entrance; everything else to the member login.
+    redirect(in_array('admin', $roles) || in_array('superadmin', $roles)
+        ? '/admin/a4mi3.php' : '/login.php');
 }
 
 // ============================================================================
@@ -211,4 +239,50 @@ function save_photo($f, $folder = null, $width = 200, $height = 200) {
     $img = new \claviska\SimpleImage();
     $img->fromFile($f->tmp_name)->thumbnail($width, $height)->toFile("$folder/$photo", 'image/jpeg');
     return $photo;
+}
+
+// ============================================================================
+// Mail
+// ============================================================================
+
+// Return local root path
+function root($path = '') {
+    return __DIR__ . "/$path";
+}
+
+// Return base url (host + port)
+function base($path = '') {
+    return "http://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]/$path";
+}
+
+// Mail credentials live in app/_config.php, which is gitignored so they are
+// never committed. Copy app/_config.sample.php to app/_config.php and fill in
+// your own values.
+function mail_config() {
+    $file = __DIR__ . '/_config.php';
+    return file_exists($file) ? require $file : [];
+}
+
+function google_maps_api_key() {
+    $config = mail_config();
+    return $config['google_maps_api_key'] ?? '';
+}
+
+// Initialize and return mail object
+function get_mail() {
+    require_once __DIR__ . '/lib/PHPMailer.php';
+    require_once __DIR__ . '/lib/SMTP.php';
+
+    $cfg = mail_config();
+
+    $m = new PHPMailer(true);
+    $m->isSMTP();
+    $m->SMTPAuth = true;
+    $m->Host     = 'smtp.gmail.com';
+    $m->Port     = 587;
+    $m->Username = $cfg['mail_username'] ?? '';
+    $m->Password = $cfg['mail_password'] ?? '';
+    $m->CharSet  = 'utf-8';
+    $m->setFrom($m->Username, 'ForgeFit Admin');
+    return $m;
 }

@@ -1,5 +1,12 @@
 <?php
 require '_base.php';
+require 'admin/voucher/_voucher_expire.php';
+
+apply_voucher_expiry($_db);
+
+if (is_admin()) {
+    redirect('/admin/member/index.php');
+}
 
 $products = $_db->query(
     'SELECT product_id AS id, product_name AS name, price,

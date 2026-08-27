@@ -22,22 +22,9 @@ if (is_post()) {
 
     // Validate: password (server-side)
     $passwordFailed = false;
-    if ($password === '') {
-        $_err['password'] = 'Password is required.';
+    if ($pwError = password_error($password)) {
+        $_err['password'] = $pwError;
         $passwordFailed = true;
-    } elseif (strlen($password) < 8 || strlen($password) > 50) {
-        $_err['password'] = 'Password must be between 8-50 characters.';
-        $passwordFailed = true;
-    } else {
-        $pw_ok = preg_match('/[a-z]/', $password)
-            && preg_match('/[A-Z]/', $password)
-            && preg_match('/[0-9]/', $password)
-            && preg_match('/[^a-zA-Z0-9]/', $password);
-
-        if (!$pw_ok) {
-            $_err['password'] = 'Password must include upper/lowercase letters, a number and a symbol.';
-            $passwordFailed = true;
-        }
     }
 
     // Validate: confirm
@@ -88,18 +75,49 @@ if (is_post()) {
         // Save photo
         $photo = save_photo($f, __DIR__ . '/../photos');
 
-        // Insert user as Member
+        // Create the account inactive until the email link is verified.
         $stm = $_db->prepare(
-            'INSERT INTO user (email, username, password, name, photo, role) VALUES (?, ?, SHA1(?), ?, ?, "member")'
+            'INSERT INTO user (email, username, password, name, photo, role, active, email_verified) VALUES (?, ?, SHA1(?), ?, ?, "member", 1, 0)'
         );
         $stm->execute([$email, $username, $password, $name, $photo]);
 
-        temp('info', 'Registration successful. You may now log in.');
-        redirect('/login.php');
+        $tokenId = bin2hex(random_bytes(32));
+        $tokenStmt = $_db->prepare(
+            'INSERT INTO token (id, expire, user_id, type) VALUES (?, ADDTIME(NOW(), "24:00"), ?, "verification")'
+        );
+        $tokenStmt->execute([$tokenId, $_db->lastInsertId()]);
+
+        $sent = false;
+        try {
+            $m = get_mail();
+            $m->addAddress($email, $name);
+            $m->isHTML(true);
+            $m->Subject = 'Verify your ForgeFit account';
+            $url = base("user/verify.php?id=$tokenId");
+            $m->Body = "<p>Dear " . encode($name) . ",</p>
+                        <p>Thank you for registering with ForgeFit Fitness Market.</p>
+                        <p>Please click <a href='$url'>here</a> to verify your email address. This link expires in 24 hours.</p>
+                        <p>From, ForgeFit Admin</p>";
+            $m->send();
+            $sent = true;
+        } catch (Exception $e) {
+            $_db->prepare('DELETE FROM token WHERE id = ?')->execute([$tokenId]);
+            $_db->prepare('DELETE FROM user WHERE email = ? AND active = 0')->execute([$email]);
+        }
+
+        if (!$sent) {
+            $_err['email'] = 'Could not send the verification email right now. Please try again later.';
+        } else {
+            temp('info', 'Registration successful. Check your email to verify your account.');
+            redirect('/login.php');
+        }
     }
 }
 
 $_title = 'Register';
+$_backUrl = '/';
+$_backLabel = 'Back to Home';
+$_photoEditor = true;
 include '../_head.php';
 ?>
 
@@ -137,5 +155,23 @@ include '../_head.php';
         <button type="reset">Reset</button>
     </section>
 </form>
+
+<dialog class="photo-editor-dialog" id="photo-editor-dialog" aria-labelledby="photo-editor-title">
+    <h2 id="photo-editor-title">Edit Profile Photo</h2>
+    <div class="photo-editor-canvas">
+        <img id="photo-editor-image" alt="Profile photo preview">
+    </div>
+    <div class="photo-editor-tools" aria-label="Photo editing tools">
+        <button type="button" data-photo-editor-action="rotate-left" title="Rotate left">&#8634;</button>
+        <button type="button" data-photo-editor-action="rotate-right" title="Rotate right">&#8635;</button>
+        <button type="button" data-photo-editor-action="flip-horizontal" title="Flip horizontally">&#8644;</button>
+        <button type="button" data-photo-editor-action="flip-vertical" title="Flip vertically">&#8597;</button>
+        <button type="button" data-photo-editor-action="reset">Reset</button>
+    </div>
+    <div class="photo-editor-actions">
+        <button type="button" class="btn-dark" data-photo-editor-action="cancel">Cancel</button>
+        <button type="button" class="btn-green" data-photo-editor-action="apply">Apply</button>
+    </div>
+</dialog>
 
 <?php include '../_foot.php'; ?>

@@ -1,9 +1,12 @@
 <?php
 require '../../_base.php';
+require '_voucher_expire.php';
 auth('admin');
 
+apply_voucher_expiry($_db);
+
 $id = req('id');
-$stmt = $_db->prepare('SELECT * FROM voucher WHERE voucher_id = ?');
+$stmt = $_db->prepare('SELECT * FROM voucher_configuration WHERE voucher_id = ?');
 $stmt->execute([$id]);
 $voucher = $stmt->fetch();
 
@@ -17,8 +20,12 @@ foreach ($categories as $category) {
     $categoryOptions[$category->category_id] = $category->name;
 }
 
+$codesStmt = $_db->prepare('SELECT id, code, status FROM voucher WHERE voucher_id = ? ORDER BY id');
+$codesStmt->execute([$id]);
+$existingCodes = $codesStmt->fetchAll();
+
 if (is_post()) {
-    $code = req('code');
+    $name = req('name');
     $categoryToggle = req('category_toggle') === 'on';
     $categoryId = req('category_id');
     $startDate = req('start_date');
@@ -35,16 +42,10 @@ if (is_post()) {
     $startDateTime = $startDate !== '' ? $startDate . ' ' . ($startTime !== '' ? $startTime : '00:00') . ':00' : '';
     $endDateTime = $endDate !== '' ? $endDate . ' ' . ($endTime !== '' ? $endTime : '00:00') . ':00' : '';
 
-    if ($code === '') {
-        $_err['code'] = 'Voucher code is required.';
-    } elseif (strlen($code) > 50) {
-        $_err['code'] = 'Voucher code must be at most 50 characters.';
-    } else {
-        $codeCheck = $_db->prepare('SELECT 1 FROM voucher WHERE code = ? AND voucher_id != ?');
-        $codeCheck->execute([$code, $id]);
-        if ($codeCheck->fetchColumn()) {
-            $_err['code'] = 'This voucher code is already in use.';
-        }
+    if ($name === '') {
+        $_err['name'] = 'Name is required.';
+    } elseif (strlen($name) > 100) {
+        $_err['name'] = 'Maximum 100 characters.';
     }
 
     if ($categoryToggle && $categoryId === '') {
@@ -59,8 +60,8 @@ if (is_post()) {
 
     if ($endDate === '') {
         $_err['end_date'] = 'End date is required.';
-    } elseif ($startDateTime !== '' && $endDateTime < $startDateTime) {
-        $_err['end_date'] = 'End date/time must be on or after the start date/time.';
+    } elseif ($startDateTime !== '' && $endDateTime <= $startDateTime) {
+        $_err['end_date'] = 'End date/time must be after the start date/time.';
     }
 
     if ($discountType === 'percentage') {
@@ -85,12 +86,12 @@ if (is_post()) {
 
     if (!$_err) {
         $stmt = $_db->prepare(
-            'UPDATE voucher
-             SET code = ?, category_id = ?, discount_type = ?, discount_value = ?, discount_percentage = ?, minimum_spend = ?, start_date = ?, end_date = ?
+            'UPDATE voucher_configuration
+             SET name = ?, category_id = ?, discount_type = ?, discount_value = ?, discount_percentage = ?, minimum_spend = ?, start_date = ?, end_date = ?
              WHERE voucher_id = ?'
         );
         $stmt->execute([
-            $code,
+            $name,
             $categoryId !== '' ? $categoryId : null,
             $discountType,
             $discountType === 'fixed' ? $discountValue : null,
@@ -101,12 +102,65 @@ if (is_post()) {
             $id,
         ]);
 
+        // Apply any code/status edits made in the Individual Voucher
+        // Configuration popup, and insert any brand-new rows added there
+        // (blank row_id). Codes already 'used' are left untouched — no
+        // removing/replacing a code that's tied to a real order.
+        $codeCharset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $rowIds = (array) ($_POST['row_id'] ?? []);
+        $rowCodes = (array) ($_POST['row_code'] ?? []);
+        $rowStatuses = (array) ($_POST['row_status'] ?? []);
+
+        $currentStatuses = [];
+        foreach ($existingCodes as $existingCode) {
+            $currentStatuses[$existingCode->id] = $existingCode->status;
+        }
+
+        $codeCheck = $_db->prepare('SELECT 1 FROM voucher WHERE code = ? AND id != ?');
+        $updateCode = $_db->prepare('UPDATE voucher SET code = ?, status = ? WHERE id = ? AND voucher_id = ?');
+        $insertCode = $_db->prepare('INSERT INTO voucher (voucher_id, code, status) VALUES (?, ?, ?)');
+        $pickedCodes = [];
+
+        foreach ($rowIds as $index => $rowIdRaw) {
+            $rowIdRaw = trim((string) $rowIdRaw);
+            $isNew = $rowIdRaw === '';
+            $rowId = $isNew ? 0 : (int) $rowIdRaw;
+
+            if (!$isNew && (!isset($currentStatuses[$rowId]) || $currentStatuses[$rowId] === 'used')) {
+                continue;
+            }
+
+            $status = ($rowStatuses[$index] ?? 'active') === 'disabled' ? 'disabled' : 'active';
+
+            $candidate = strtoupper(trim((string) ($rowCodes[$index] ?? '')));
+            if ($candidate === '') {
+                continue;
+            }
+
+            // Prefer the code chosen in the popup; fall back to a fresh
+            // random one if it collides with an existing/already-picked
+            // code, matching voucher-create.php's behavior.
+            while (in_array($candidate, $pickedCodes, true) || ($codeCheck->execute([$candidate, $rowId]) && $codeCheck->fetchColumn())) {
+                $candidate = '';
+                for ($j = 0; $j < 7; $j++) {
+                    $candidate .= $codeCharset[random_int(0, strlen($codeCharset) - 1)];
+                }
+            }
+            $pickedCodes[] = $candidate;
+
+            if ($isNew) {
+                $insertCode->execute([$id, $candidate, $status]);
+            } else {
+                $updateCode->execute([$candidate, $status, $rowId, $id]);
+            }
+        }
+
         temp('info', 'Voucher updated.');
         redirect('vouchers.php');
     }
 } else {
     // Pre-fill sticky form fields from the DB on first (GET) load.
-    $_REQUEST['code'] = $voucher->code;
+    $_REQUEST['name'] = $voucher->name;
     $_REQUEST['category_id'] = $voucher->category_id;
     $_REQUEST['category_toggle'] = $voucher->category_id !== null ? 'on' : '';
     $_REQUEST['start_date'] = substr($voucher->start_date, 0, 10);
@@ -120,12 +174,51 @@ if (is_post()) {
     $_REQUEST['minimum_spend_toggle'] = (float) $voucher->minimum_spend > 0 ? 'on' : '';
 }
 
-$_title = 'Update Voucher';
+$_title = 'Update Voucher Configuration';
 include '../../_head.php';
 ?>
 
 <form class="form" method="post">
-    <?php html_text('code', 'Voucher Code', 'text', true); ?>
+    <label for="name">Name <span class="required-star">*</span></label>
+    <input type="text" id="name" name="name" value="<?= encode(req('name')) ?>" autocomplete="off">
+    <?= err('name') ?>
+
+    <button type="button" class="btn-blue full-width-label" id="individual-voucher-btn">Individual Voucher Configuration</button>
+
+    <dialog id="individual-voucher-dialog" aria-labelledby="individual-voucher-title">
+        <p id="individual-voucher-title">Individual Voucher Configuration</p>
+        <div class="individual-voucher-list" id="individual-voucher-list">
+            <?php foreach ($existingCodes as $existingCode): ?>
+                <?php $locked = $existingCode->status === 'used'; ?>
+                <div class="individual-voucher-row" data-locked="<?= $locked ? '1' : '0' ?>">
+                    <span class="individual-voucher-row__code" <?= $locked ? '' : 'tabindex="0" title="Click to edit this code"' ?>><?= encode($existingCode->code) ?></span>
+                    <div class="individual-voucher-row__buttons">
+                        <?php if ($locked): ?>
+                            <span class="individual-voucher-row__used">Used</span>
+                        <?php else: ?>
+                            <button type="button" class="individual-voucher-row__randomize">Randomize</button>
+                            <button type="button" class="individual-voucher-row__toggle" title="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
+                                <img src="/images/<?= $existingCode->status === 'active' ? 'disable.png' : 'activate.png' ?>" alt="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <input type="hidden" name="row_id[]" value="<?= encode($existingCode->id) ?>">
+                    <input type="hidden" name="row_code[]" value="<?= encode($existingCode->code) ?>" data-row-code-input>
+                    <input type="hidden" name="row_status[]" value="<?= encode($existingCode->status) ?>" data-row-status-input>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <button type="button" class="btn-blue individual-voucher-dialog-add" id="individual-voucher-add">+ Add Voucher</button>
+        <div class="individual-voucher-dialog-actions">
+            <button type="button" class="btn-red" id="individual-voucher-cancel">Cancel</button>
+            <button type="button" class="btn-green" id="individual-voucher-close">Confirm</button>
+        </div>
+    </dialog>
+
+    <dialog class="voucher-code-duplicate-dialog" id="voucher-code-duplicate-dialog" aria-labelledby="voucher-code-duplicate-message">
+        <p id="voucher-code-duplicate-message">This voucher code is occupied.</p>
+        <button type="button" id="voucher-code-duplicate-ok">OK</button>
+    </dialog>
 
     <?php $categoryChecked = req('category_toggle') === 'on'; ?>
     <label class="toggle-field">
@@ -182,6 +275,269 @@ include '../../_head.php';
         <button type="button" class="btn-dark" data-get="vouchers.php">Cancel</button>
     </section>
 </form>
+
+<script>
+;(function () {
+    const openBtn = document.getElementById('individual-voucher-btn');
+    const closeBtn = document.getElementById('individual-voucher-close');
+    const cancelBtn = document.getElementById('individual-voucher-cancel');
+    const addBtn = document.getElementById('individual-voucher-add');
+    const dialog = document.getElementById('individual-voucher-dialog');
+    const list = document.getElementById('individual-voucher-list');
+    const duplicateDialog = document.getElementById('voucher-code-duplicate-dialog');
+    const duplicateOkBtn = document.getElementById('voucher-code-duplicate-ok');
+    if (!openBtn || !dialog || !list) return;
+
+    duplicateOkBtn?.addEventListener('click', () => duplicateDialog.close());
+
+    const CODE_CHARSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const MAX_ROWS = 100;
+    let snapshotHtml = '';
+    let existingDbCodes = [];
+
+    fetch('voucher-code-list.php')
+        .then(res => res.json())
+        .then(codes => { existingDbCodes = codes; })
+        .catch(e => console.error('Failed to load existing voucher codes:', e));
+
+    const generateCode = () => {
+        let code = '';
+        for (let i = 0; i < 7; i++) {
+            code += CODE_CHARSET[Math.floor(Math.random() * CODE_CHARSET.length)];
+        }
+        return code;
+    };
+
+    const getAllCodes = (excludeRow = null) => {
+        return Array.from(list.querySelectorAll('[data-row-code-input]'))
+            .filter(input => input.closest('.individual-voucher-row') !== excludeRow)
+            .map(input => input.value);
+    };
+
+    const generateUniqueCode = (excludeRow = null) => {
+        const taken = getAllCodes(excludeRow).concat(existingDbCodes);
+        let code = generateCode();
+        while (taken.includes(code)) {
+            code = generateCode();
+        }
+        return code;
+    };
+
+    const applyCode = (row, code) => {
+        row.querySelector('[data-row-code-input]').value = code;
+        const codeEl = row.querySelector('.individual-voucher-row__code');
+        if (codeEl) codeEl.textContent = code;
+    };
+
+    const applyStatus = (row, status) => {
+        row.querySelector('[data-row-status-input]').value = status;
+        const toggle = row.querySelector('.individual-voucher-row__toggle');
+        const img = toggle?.querySelector('img');
+        if (toggle && img) {
+            img.src = '/images/' + (status === 'active' ? 'disable.png' : 'activate.png');
+            img.alt = status === 'active' ? 'Disable' : 'Activate';
+            toggle.title = img.alt;
+        }
+    };
+
+    const updateAddButtonState = () => {
+        if (addBtn) addBtn.disabled = list.querySelectorAll('.individual-voucher-row').length >= MAX_ROWS;
+    };
+
+    const wireRow = row => {
+        if (row.dataset.locked === '1') return;
+
+        const codeEl = row.querySelector('.individual-voucher-row__code');
+        const codeInput = row.querySelector('[data-row-code-input]');
+        const randomize = row.querySelector('.individual-voucher-row__randomize');
+        const toggle = row.querySelector('.individual-voucher-row__toggle');
+        const remove = row.querySelector('.individual-voucher-row__remove');
+
+        const editCode = () => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'individual-voucher-row__code-input';
+            input.value = codeInput.value;
+
+            input.addEventListener('input', () => {
+                input.value = input.value.toUpperCase().replace(new RegExp('[^' + CODE_CHARSET + ']', 'g'), '');
+            });
+
+            const commit = async () => {
+                const value = input.value;
+
+                if (getAllCodes(row).includes(value)) {
+                    duplicateDialog?.showModal();
+                    input.replaceWith(codeEl);
+                    return;
+                }
+
+                if (value.length === 0) {
+                    input.replaceWith(codeEl);
+                    return;
+                }
+
+                let accepted = false;
+                try {
+                    const rowId = row.querySelector('[name="row_id[]"]')?.value || '0';
+                    const res = await fetch(
+                        'voucher-code-check.php?code=' + encodeURIComponent(value) + '&exclude_id=' + encodeURIComponent(rowId)
+                    );
+                    if (!res.ok) throw new Error('Unexpected response: ' + res.status);
+                    const data = await res.json();
+
+                    if (data.occupied) {
+                        duplicateDialog?.showModal();
+                    } else {
+                        accepted = true;
+                    }
+                } catch (e) {
+                    // Could not verify uniqueness (session expired,
+                    // network error, etc.) — keep the previous code
+                    // rather than silently accepting an unverified one.
+                    console.error('Voucher code uniqueness check failed:', e);
+                }
+
+                // Restore the span to the DOM first — applyCode() looks it
+                // up via querySelector, which finds nothing while it's
+                // still replaced by this input.
+                input.replaceWith(codeEl);
+                if (accepted) applyCode(row, value);
+            };
+
+            input.addEventListener('blur', commit);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.replaceWith(codeEl);
+                }
+            });
+
+            codeEl.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+
+        codeEl?.addEventListener('click', editCode);
+        codeEl?.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                editCode();
+            }
+        });
+
+        randomize?.addEventListener('click', () => applyCode(row, generateUniqueCode(row)));
+
+        toggle?.addEventListener('click', () => {
+            const statusInput = row.querySelector('[data-row-status-input]');
+            applyStatus(row, statusInput.value === 'active' ? 'disabled' : 'active');
+        });
+
+        remove?.addEventListener('click', () => {
+            row.remove();
+            updateAddButtonState();
+        });
+    };
+
+    const buildNewRow = () => {
+        const code = generateUniqueCode();
+
+        const row = document.createElement('div');
+        row.className = 'individual-voucher-row';
+        row.dataset.locked = '0';
+
+        const codeEl = document.createElement('span');
+        codeEl.className = 'individual-voucher-row__code';
+        codeEl.textContent = code;
+        codeEl.tabIndex = 0;
+        codeEl.title = 'Click to edit this code';
+        row.appendChild(codeEl);
+
+        const buttons = document.createElement('div');
+        buttons.className = 'individual-voucher-row__buttons';
+
+        const randomize = document.createElement('button');
+        randomize.type = 'button';
+        randomize.className = 'individual-voucher-row__randomize';
+        randomize.textContent = 'Randomize';
+        buttons.appendChild(randomize);
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'individual-voucher-row__toggle';
+        toggle.title = 'Disable';
+        const img = document.createElement('img');
+        img.src = '/images/disable.png';
+        img.alt = 'Disable';
+        toggle.appendChild(img);
+        buttons.appendChild(toggle);
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'individual-voucher-row__remove';
+        remove.textContent = '×';
+        remove.setAttribute('aria-label', 'Remove this voucher');
+        remove.title = 'Remove this voucher';
+        buttons.appendChild(remove);
+
+        row.appendChild(buttons);
+
+        const rowIdInput = document.createElement('input');
+        rowIdInput.type = 'hidden';
+        rowIdInput.name = 'row_id[]';
+        rowIdInput.value = '';
+        row.appendChild(rowIdInput);
+
+        const codeInput = document.createElement('input');
+        codeInput.type = 'hidden';
+        codeInput.name = 'row_code[]';
+        codeInput.value = code;
+        codeInput.setAttribute('data-row-code-input', '');
+        row.appendChild(codeInput);
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'row_status[]';
+        statusInput.value = 'active';
+        statusInput.setAttribute('data-row-status-input', '');
+        row.appendChild(statusInput);
+
+        wireRow(row);
+        return row;
+    };
+
+    list.querySelectorAll('.individual-voucher-row').forEach(wireRow);
+
+    addBtn?.addEventListener('click', () => {
+        if (list.querySelectorAll('.individual-voucher-row').length >= MAX_ROWS) return;
+        list.appendChild(buildNewRow());
+        updateAddButtonState();
+    });
+
+    const restore = () => {
+        list.innerHTML = snapshotHtml;
+        list.querySelectorAll('.individual-voucher-row').forEach(wireRow);
+        updateAddButtonState();
+    };
+
+    openBtn.addEventListener('click', () => {
+        snapshotHtml = list.innerHTML;
+        updateAddButtonState();
+        dialog.showModal();
+    });
+
+    closeBtn?.addEventListener('click', () => dialog.close());
+
+    cancelBtn?.addEventListener('click', () => {
+        restore();
+        dialog.close();
+    });
+
+    dialog.addEventListener('cancel', restore);
+})();
+</script>
 
 <?php
 include '../../_foot.php';

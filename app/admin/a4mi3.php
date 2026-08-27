@@ -1,5 +1,10 @@
 <?php
-require '_base.php';
+require '../_base.php';
+
+// No auth() here — this is the admin sign-in page, so an admin reaching it is
+// by definition not logged in yet. The only intentional exception under app/admin/.
+// The obscure filename is not the protection; auth('admin') on every other admin
+// page is.
 
 if ($_user) {
     redirect(is_admin() ? '/admin/member/index.php' : '/index.php');
@@ -19,23 +24,20 @@ if (is_post()) {
 
     if (!$_err) {
         // A valid email is always treated as an email; every other identifier is a username.
-        // Members only — an admin with correct credentials simply isn't found here and
-        // falls through to the generic message, revealing neither the account nor the
-        // separate admin entrance.
+        // Admins only — a member with correct credentials falls through to the generic
+        // message rather than being told this door isn't theirs.
         $loginColumn = is_email($identifier) ? 'email' : 'username';
         $stm = $_db->prepare(
-            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role = 'member'"
+            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role IN ('admin','superadmin')"
         );
         $stm->execute([$identifier, $password]);
         $u = $stm->fetch();
 
         if ($u && !$u->active) {
             $_err['password'] = 'This account has been disabled.';
-        } elseif ($u && !$u->email_verified) {
-            $_err['password'] = 'Please verify your email before logging in.';
         } elseif ($u) {
             temp('info', 'Login successful.');
-            login($u, '/index.php');
+            login($u, '/admin/member/index.php');
         } else {
             $_err['password'] = 'Invalid email or password'; // generic — don't reveal which
         }
@@ -43,7 +45,7 @@ if (is_post()) {
 }
 
 $_title = 'Login';
-include '_head.php';
+include '../_head.php';
 ?>
 
 <form class="form" method="post">
@@ -55,7 +57,5 @@ include '_head.php';
     </section>
 </form>
 
-<p><a href="/user/reset.php">Forgot your password?</a></p>
-
 <?php
-include '_foot.php';
+include '../_foot.php';
