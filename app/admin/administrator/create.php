@@ -29,8 +29,8 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
-    } elseif (strlen($email) > 100) {
-        $_err['email'] = 'Maximum 100 characters.';
+    } elseif (strlen($email) > 255) {
+        $_err['email'] = 'Maximum 255 characters.';
     } elseif (!is_email($email)) {
         $_err['email'] = 'Please enter a valid email address.';
     } elseif (!is_unique('user', 'email', $email)) {
