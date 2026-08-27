@@ -2,12 +2,6 @@
 require '../../_base.php';
 auth('admin');
 
-$categories = $_db->query('SELECT category_id, name FROM category ORDER BY name')->fetchAll();
-$categoryOptions = [];
-foreach ($categories as $category) {
-    $categoryOptions[$category->category_id] = $category->name;
-}
-
 $defaultStartDate = date('Y-m-d');
 $defaultEndDate = date('Y-m-d', strtotime('+1 month'));
 $defaultTime = date('H:i', strtotime('+1 hour'));
@@ -15,8 +9,6 @@ $defaultTime = date('H:i', strtotime('+1 hour'));
 if (is_post()) {
     $quantity = max(1, (int) req('quantity', 1));
     $name = req('name');
-    $categoryToggle = req('category_toggle') === 'on';
-    $categoryId = req('category_id');
     $startDate = req('start_date');
     $startTime = req('start_time', '00:00');
     $endDate = req('end_date');
@@ -39,12 +31,6 @@ if (is_post()) {
         $_err['name'] = 'Name is required.';
     } elseif (strlen($name) > 100) {
         $_err['name'] = 'Maximum 100 characters.';
-    }
-
-    if ($categoryToggle && $categoryId === '') {
-        $_err['category_id'] = 'Please select a category, or turn this off.';
-    } elseif ($categoryId !== '' && !array_key_exists($categoryId, $categoryOptions)) {
-        $_err['category_id'] = 'Please select a valid category.';
     }
 
     if ($startDate === '') {
@@ -79,12 +65,11 @@ if (is_post()) {
 
     if (!$_err) {
         $configStmt = $_db->prepare(
-            'INSERT INTO voucher_configuration (name, category_id, discount_type, discount_value, discount_percentage, minimum_spend, start_date, end_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO voucher_configuration (name, discount_type, discount_value, discount_percentage, minimum_spend, start_date, end_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $configStmt->execute([
             $name,
-            $categoryId !== '' ? $categoryId : null,
             $discountType,
             $discountType === 'fixed' ? $discountValue : null,
             $discountType === 'percentage' ? $discountPercentage : null,
@@ -164,16 +149,6 @@ include '../../_head.php';
         <p id="voucher-code-duplicate-message">This voucher code is occupied.</p>
         <button type="button" id="voucher-code-duplicate-ok">OK</button>
     </dialog>
-
-    <?php $categoryChecked = is_post() ? req('category_toggle') === 'on' : false; ?>
-    <label class="toggle-field">
-        <input type="checkbox" name="category_toggle" data-toggle-target="#category-field" <?= $categoryChecked ? 'checked' : '' ?>>
-        <span class="toggle-switch"><span class="toggle-switch__thumb"></span></span>
-        Restrict to a specific category
-    </label>
-    <div id="category-field" <?= $categoryChecked ? '' : 'hidden' ?>>
-        <?php html_select('category_id', 'Category', $categoryOptions, true); ?>
-    </div>
 
     <?php $minimumSpendChecked = is_post() ? req('minimum_spend_toggle') === 'on' : false; ?>
     <label class="toggle-field">
@@ -390,7 +365,7 @@ include '../../_head.php';
             toggle.className = 'individual-voucher-row__toggle';
 
             const img = document.createElement('img');
-            img.src = '/images/' + (status === 'active' ? 'disable.png' : 'activate.png');
+            img.src = '/images/' + (status === 'active' ? 'activate.png' : 'disable.png');
             img.alt = status === 'active' ? 'Disable' : 'Activate';
             toggle.title = img.alt;
             toggle.appendChild(img);

@@ -4,7 +4,7 @@
 USE `fitnessdb`;
 
 INSERT INTO `category` (`category_id`, `name`) VALUES
-    (1, 'Dumbbell'),
+    (1, 'Equipment'),
     (2, 'Protein Powder'),
     (3, 'Supplements'),
     (4, 'Apparel'),

@@ -96,10 +96,18 @@ function create_order_from_cart(
         $paymentStmt->execute([$orderId, $total, $paymentMethod, $paymentStatus, $transactionReference]);
 
         if ($voucher) {
+            // Guarded the same way the stock update above is: the voucher was
+            // only confirmed 'active' back when checkout.php validated it,
+            // before this transaction started, so a concurrent order using
+            // the same code could have already consumed it in the meantime.
             $voucherUpdate = $db->prepare(
-                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ?"
+                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ? AND status = 'active'"
             );
             $voucherUpdate->execute([$voucher->id]);
+
+            if ($voucherUpdate->rowCount() === 0) {
+                throw new RuntimeException('This voucher was just used elsewhere. Please remove it and try again.');
+            }
         }
 
         $cartProductIdsToClear ??= array_map(fn($item) => $item->product_id, $items);

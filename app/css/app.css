@@ -114,6 +114,11 @@ nav a.active {
     width: 38px;
 }
 
+.admin-table-search-reset,
+a.btn-dark {
+    text-decoration: none;
+}
+
 .admin-table-search__button img {
     width: 18px;
     height: 18px;
@@ -1108,6 +1113,9 @@ h1 {
 
 .form > label.toggle-field {
     grid-column: 1 / -1;
+}
+
+.toggle-field {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1172,6 +1180,17 @@ h1 {
     flex: 1 1 0;
 }
 
+.voucher-code-field {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.form .voucher-code-field input {
+    width: auto;
+    flex: 1 1 auto;
+}
+
 .form > label.full-width-label,
 .form > label.toggle-field--discount,
 .form > p.full-width-label,
@@ -1187,6 +1206,7 @@ h1 {
 
 .toggle-field--discount {
     gap: 10px;
+    margin-top: 24px;
 }
 
 .toggle-field__side-label {
@@ -1913,6 +1933,21 @@ label.upload img {
     width: 16px;
     height: 16px;
     margin-left: 4px;
+}
+
+.admin-table-status--active {
+    color: #27ae60;
+    font-weight: 700;
+}
+
+.admin-table-status--disabled {
+    color: #e74c3c;
+    font-weight: 700;
+}
+
+.admin-table-status--pending {
+    color: #2563eb;
+    font-weight: 700;
 }
 
 .admin-table tbody tr {

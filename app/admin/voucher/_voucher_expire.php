@@ -8,8 +8,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
 // cron/scheduled job runner: a configuration past its end_date flips to
 // 'expired', and every still-'active' code under it flips to 'disabled' so
 // the code-level status reflects reality too (not just the parent config).
+// Both 'active' and 'disabled' configurations expire this way — a disabled
+// voucher whose window has passed still needs to reach 'expired' so it can
+// eventually be archived/deleted, not sit disabled forever.
 function apply_voucher_expiry($_db) {
-    $_db->exec("UPDATE voucher_configuration SET status = 'expired' WHERE status = 'active' AND end_date < NOW()");
+    $_db->exec("UPDATE voucher_configuration SET status = 'expired' WHERE status IN ('active', 'disabled') AND end_date < NOW()");
     $_db->exec(
         "UPDATE voucher v
          JOIN voucher_configuration vc ON vc.voucher_id = v.voucher_id

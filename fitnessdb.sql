@@ -91,7 +91,6 @@ CREATE TABLE IF NOT EXISTS `wishlist_item` (
 CREATE TABLE IF NOT EXISTS `voucher_configuration` (
     `voucher_id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
-    `category_id` INT NULL,
     `discount_type` ENUM('fixed', 'percentage') NOT NULL DEFAULT 'fixed',
     `discount_value` DECIMAL(10,2) NULL,
     `discount_percentage` DECIMAL(5,2) NULL,
@@ -99,8 +98,7 @@ CREATE TABLE IF NOT EXISTS `voucher_configuration` (
     `start_date` DATETIME NOT NULL,
     `end_date` DATETIME NOT NULL,
     `status` ENUM('active', 'disabled', 'expired') NOT NULL DEFAULT 'active',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`category_id`) REFERENCES `category`(`category_id`) ON DELETE SET NULL
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- 9. Voucher Table (individual codes batch-generated under a configuration)
@@ -170,6 +168,7 @@ CREATE TABLE IF NOT EXISTS `stock_reminder` (
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE,
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
 
 -- 14. Token Table (password reset links)
 CREATE TABLE IF NOT EXISTS `token` (
