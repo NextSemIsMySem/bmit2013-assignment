@@ -14,7 +14,7 @@ if ($leastPrice !== null && $mostPrice !== null && $mostPrice < $leastPrice) {
 }
 
 $categories = [
-    'dumbbells' => ['label' => 'Dumbbell', 'ids' => [1]],
+    'equipment' => ['label' => 'Equipment', 'ids' => [1]],
     'protein_powder' => ['label' => 'Protein Powder', 'ids' => [2]],
     'supplements' => ['label' => 'Supplements', 'ids' => [3]],
     'other' => ['label' => 'Others', 'ids' => [4, 5]],

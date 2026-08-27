@@ -7,10 +7,7 @@ apply_voucher_expiry($_db);
 
 $id = req('id');
 $stmt = $_db->prepare(
-    "SELECT vc.*, c.name AS category_name
-     FROM voucher_configuration vc
-     LEFT JOIN category c ON c.category_id = vc.category_id
-     WHERE vc.voucher_id = ? AND vc.status = 'expired'"
+    "SELECT * FROM voucher_configuration WHERE voucher_id = ? AND status = 'expired'"
 );
 $stmt->execute([$id]);
 $voucher = $stmt->fetch();
@@ -23,7 +20,6 @@ $codesStmt = $_db->prepare('SELECT id, code, status FROM voucher WHERE voucher_i
 $codesStmt->execute([$id]);
 $existingCodes = $codesStmt->fetchAll();
 
-$categoryDisplay = $voucher->category_name ?? 'All';
 $discountDisplay = $voucher->discount_type === 'percentage'
     ? number_format((float) $voucher->discount_percentage, 2) . '%'
     : 'RM ' . number_format((float) $voucher->discount_value, 2);
@@ -34,7 +30,6 @@ include '../../_head.php';
 
 <div class="form">
     <div class="archived-field full-width-label"><label>Name</label><span><?= encode($voucher->name) ?></span></div>
-    <div class="archived-field full-width-label"><label>Category</label><span><?= encode($categoryDisplay) ?></span></div>
     <div class="archived-field full-width-label"><label>Start Date</label><span><?= encode($voucher->start_date) ?></span></div>
     <div class="archived-field full-width-label"><label>End Date</label><span><?= encode($voucher->end_date) ?></span></div>
     <div class="archived-field full-width-label"><label>Discount</label><span><?= encode($discountDisplay) ?></span></div>

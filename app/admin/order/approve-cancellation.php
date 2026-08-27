@@ -56,6 +56,21 @@ foreach ($itemsStmt->fetchAll() as $item) {
     $restockStmt->execute([$item->quantity, $item->product_id]);
 }
 
+// Same idea for the voucher this order used, if any — the discount never
+// actually went through, so release the code back to active. If its parent
+// configuration has since expired or been disabled, the next expiry sweep
+// (apply_voucher_expiry, run on every admin voucher page load) will flip it
+// back down on its own, same as any other active code under it would.
+if ($order->voucher_id) {
+    $_db->prepare(
+        "UPDATE voucher SET status = 'active', used_at = NULL WHERE id = ? AND status = 'used'"
+    )->execute([$order->voucher_id]);
+}
+
+$_db->prepare(
+    "UPDATE orders SET status = 'cancelled', cancellation_requested_at = NULL WHERE order_id = ?"
+)->execute([$id]);
+
 $_db->commit();
 
 temp('info', 'Cancellation approved. Order marked cancelled and stock restored.');

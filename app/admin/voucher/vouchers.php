@@ -7,7 +7,6 @@ apply_voucher_expiry($_db);
 
 $fields = [
     'name'            => 'Name',
-    'category_display' => 'Category',
     'start_date'      => 'Start Date',
     'end_date'        => 'End Date',
     'status'          => 'Status',
@@ -22,19 +21,47 @@ $dir = req('dir', 'asc');
 in_array($dir, ['asc', 'desc'], true) || $dir = 'asc';
 
 $name = req('name', '');
-$stmt = $_db->prepare(
-    "SELECT v.*, c.name AS category_name
-     FROM voucher_configuration v
-     LEFT JOIN category c ON c.category_id = v.category_id
-     WHERE v.name LIKE ? AND v.status != 'expired'
-     ORDER BY $sort $dir"
-);
-$stmt->execute(["%$name%"]);
-$vouchers = $stmt->fetchAll();
+$status = req('status', '');
+$discountFilterOn = req('discount_filter_toggle') === 'on';
+$discountType = req('discount_type') === 'fixed' ? 'fixed' : 'percentage';
+$discountPercentageMin = req('discount_percentage_min', '');
+$discountValueMin = req('discount_value_min', '');
+$minSpendRequired = req('min_spend_toggle') === 'on';
 
-foreach ($vouchers as $voucher) {
-    $voucher->category_display = $voucher->category_name ?? 'All';
+$conditions = ['v.name LIKE ?', "v.status != 'expired'"];
+$params = ["%$name%"];
+
+if ($status !== '') {
+    $conditions[] = 'v.status = ?';
+    $params[] = $status;
 }
+
+if ($discountFilterOn) {
+    $conditions[] = 'v.discount_type = ?';
+    $params[] = $discountType;
+
+    if ($discountType === 'percentage' && $discountPercentageMin !== '') {
+        $conditions[] = 'v.discount_percentage >= ?';
+        $params[] = (float) $discountPercentageMin;
+    } elseif ($discountType === 'fixed' && $discountValueMin !== '') {
+        $conditions[] = 'v.discount_value >= ?';
+        $params[] = (float) $discountValueMin;
+    }
+}
+
+if ($minSpendRequired) {
+    $conditions[] = 'v.minimum_spend > 0';
+}
+
+$sql = "SELECT v.*,
+               (v.status = 'active' AND v.start_date > NOW()) AS is_pending,
+               EXISTS (SELECT 1 FROM voucher vv WHERE vv.voucher_id = v.voucher_id AND vv.status = 'used') AS has_used_code
+        FROM voucher_configuration v
+        WHERE " . implode(' AND ', $conditions) . "
+        ORDER BY $sort $dir";
+$stmt = $_db->prepare($sql);
+$stmt->execute($params);
+$vouchers = $stmt->fetchAll();
 
 $_title = 'Manage Vouchers';
 include '../../_head.php';
@@ -42,8 +69,43 @@ include '../../_head.php';
 $adminColumns = $fields;
 $adminRows = $vouchers;
 $adminPaginate = true;
+$adminColumnDisplay = [
+    'status' => fn($row) => $row->is_pending ? 'Pending' : ucfirst($row->status),
+];
+$adminColumnClass = [
+    'status' => fn($row) => $row->is_pending
+        ? 'admin-table-status--pending'
+        : ($row->status === 'active' ? 'admin-table-status--active' : 'admin-table-status--disabled'),
+];
 $adminFilter = [
-    'fields' => [],
+    'fields' => [
+        [
+            'name' => 'status',
+            'label' => 'Status',
+            'options' => ['active' => 'Active', 'disabled' => 'Disabled'],
+        ],
+        [
+            'type' => 'toggle',
+            'name' => 'discount_filter_toggle',
+            'label' => 'Filter by discount type',
+            'fields' => [
+                [
+                    'type' => 'discount',
+                    'label' => 'Discount Type',
+                    'type_name' => 'discount_type',
+                    'percentage_name' => 'discount_percentage_min',
+                    'amount_name' => 'discount_value_min',
+                    'percentage_label' => 'Min Discount Percentage (%)',
+                    'amount_label' => 'Min Discount Amount (RM)',
+                ],
+            ],
+        ],
+        [
+            'type' => 'toggle',
+            'name' => 'min_spend_toggle',
+            'label' => 'Require a minimum spend',
+        ],
+    ],
 ];
 $adminSearch = [
     'name' => 'name',
@@ -63,7 +125,7 @@ $adminActions = [
     ],
     [
         'label'   => fn($row) => $row->status === 'disabled' ? 'Activate voucher' : 'Disable voucher',
-        'icon'    => fn($row) => $row->status === 'disabled' ? 'activate.png' : 'disable.png',
+        'icon'    => fn($row) => $row->status === 'disabled' ? 'disable.png' : 'activate.png',
         'method'  => 'post',
         'url'     => fn($row) => ($row->status === 'disabled' ? 'voucher-activate.php' : 'voucher-disable.php') . '?id=' . $row->voucher_id,
         'confirm' => fn($row) => $row->status === 'disabled' ? 'Activate this voucher?' : 'Disable this voucher?',
@@ -80,6 +142,10 @@ $adminActions = [
         'method'  => 'post',
         'url'     => fn($row) => 'voucher-delete.php?id=' . $row->voucher_id,
         'confirm' => 'Delete this voucher?',
+        // Deleting is permanent and cascades to every code under it, so it's
+        // only offered once the voucher is expired and none of its codes
+        // were ever used — matches the rule voucher-delete.php enforces.
+        'hidden'  => fn($row) => $row->status !== 'expired' || $row->has_used_code,
     ],
 ];
 $adminBulkSelect = [
@@ -103,12 +169,9 @@ $adminBulkSelect = [
             'class'     => 'admin-bulk-bar__action--green',
             'countWhen' => 'disabled',
         ],
-        [
-            'label'   => 'Delete',
-            'icon'    => 'delete.png',
-            'url'     => 'voucher-bulk-delete.php',
-            'confirm' => 'Delete the selected vouchers?',
-        ],
+        // No bulk Delete here — voucher-bulk-delete.php only removes
+        // expired vouchers, and this list never shows expired ones (see
+        // Archived Vouchers for that).
     ],
 ];
 include '../admin_table.php';

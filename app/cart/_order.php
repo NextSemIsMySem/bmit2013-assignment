@@ -96,9 +96,10 @@ function create_order_from_cart(
         $paymentStmt->execute([$orderId, $total, $paymentMethod, $paymentStatus, $transactionReference]);
 
         if ($voucher) {
-            // Guarded the same way as the stock decrement above: only claims
-            // the voucher if it's still active, so two concurrent checkouts
-            // racing on the same one-time code can't both redeem it.
+            // Guarded the same way the stock update above is: the voucher was
+            // only confirmed 'active' back when checkout.php validated it,
+            // before this transaction started, so a concurrent order using
+            // the same code could have already consumed it in the meantime.
             $voucherUpdate = $db->prepare(
                 "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ? AND status = 'active'"
             );

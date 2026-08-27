@@ -35,7 +35,9 @@ toggleFields.forEach(toggle => toggle.addEventListener('change', syncToggleField
 
 const adminFilterBtn = document.getElementById('admin-table-filter-btn');
 const adminFilterDialog = document.getElementById('admin-table-filter-dialog');
+const adminFilterClose = document.getElementById('admin-table-filter-close');
 adminFilterBtn?.addEventListener('click', () => adminFilterDialog.showModal());
+adminFilterClose?.addEventListener('click', () => adminFilterDialog.close());
 
 document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     const storageKey = bar.dataset.storageKey;

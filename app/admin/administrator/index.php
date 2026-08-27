@@ -65,7 +65,7 @@ $adminSearch = [
 $adminActions = [
     [
         'label'   => fn($row) => $row->active ? 'Disable admin' : 'Activate admin',
-        'icon'    => fn($row) => $row->active ? 'disable.png' : 'activate.png',
+        'icon'    => fn($row) => $row->active ? 'activate.png' : 'disable.png',
         'method'  => 'post',
         'url'     => fn($row) => ($row->active ? 'admin-disable.php' : 'admin-activate.php') . '?id=' . $row->user_id,
         'confirm' => fn($row) => $row->active ? 'Disable this admin?' : 'Activate this admin?',
