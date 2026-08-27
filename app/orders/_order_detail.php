@@ -22,6 +22,11 @@ $paymentMethods = [
 ];
 
 $total = $order->subtotal - $order->discount_amount + $order->shipping_fee;
+
+// Admin's caller joins the buyer's name/email onto $order directly; the
+// member-facing callers don't (the order's already scoped to $_user there).
+$customerName = $order->customer_name ?? ($_user->name ?? '');
+$customerEmail = $order->customer_email ?? ($_user->email ?? '');
 ?>
 
 <?php if ($order->status === 'cancelled'): ?>
@@ -100,3 +105,76 @@ $total = $order->subtotal - $order->discount_amount + $order->shipping_fee;
     <p class="checkout-totals-line">Shipping: RM <?= encode(number_format($order->shipping_fee, 2)) ?></p>
     <p class="checkout-totals-line checkout-totals-grand">Total: RM <?= encode(number_format($total, 2)) ?></p>
 </div>
+
+<!--
+    Formal invoice, used for the printed/PDF receipt only — hidden on
+    screen, shown in place of everything above via @media print (see
+    css/app.css). Kept separate from the Shopee-style cards above rather
+    than reusing them, since a receipt needs its own fixed, document-like
+    layout regardless of how the on-screen order page is designed.
+-->
+<section class="receipt-invoice">
+    <header class="receipt-invoice-header">
+        <h2>ForgeFit Fitness Market</h2>
+        <p>Fitness Equipment &amp; Supplements Store &middot; Official Receipt</p>
+    </header>
+
+    <div class="receipt-invoice-meta">
+        <div>
+            <strong>Receipt #<?= (int) $order->order_id ?></strong><br>
+            Date: <?= encode(date('d M Y, g:ia', strtotime($order->created_at))) ?><br>
+            Status: <?= encode(order_status_label($order->status)) ?>
+        </div>
+        <div class="receipt-invoice-meta-right">
+            <strong>Payment Method</strong><br>
+            <?= encode($paymentMethods[$payment->payment_method ?? ''] ?? ($payment->payment_method ?? '-')) ?><br>
+            Payment Status: <?= encode(ucfirst($payment->status ?? '-')) ?>
+        </div>
+    </div>
+
+    <div class="receipt-invoice-parties">
+        <div>
+            <strong>Billed To</strong><br>
+            <?= encode($customerName) ?><br>
+            <?= encode($customerEmail) ?>
+        </div>
+        <div class="receipt-invoice-meta-right">
+            <strong>Shipping Address</strong><br>
+            <?= encode($order->shipping_street) ?><br>
+            <?= encode($order->shipping_city) ?>, <?= encode($order->shipping_state) ?> <?= encode($order->shipping_postal_code) ?><br>
+            <?= encode($order->shipping_country) ?>
+        </div>
+    </div>
+
+    <table class="receipt-invoice-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($items as $item): ?>
+                <tr>
+                    <td><?= encode($item->product_name) ?></td>
+                    <td><?= encode($item->quantity) ?></td>
+                    <td>RM <?= encode(number_format($item->unit_price, 2)) ?></td>
+                    <td>RM <?= encode(number_format($item->final_price, 2)) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <div class="receipt-invoice-totals">
+        <p><span>Subtotal</span><span>RM <?= encode(number_format($order->subtotal, 2)) ?></span></p>
+        <p><span>Discount</span><span>-RM <?= encode(number_format($order->discount_amount, 2)) ?></span></p>
+        <p><span>Shipping</span><span>RM <?= encode(number_format($order->shipping_fee, 2)) ?></span></p>
+        <p class="receipt-invoice-grand-total"><span>Total</span><span>RM <?= encode(number_format($total, 2)) ?></span></p>
+    </div>
+
+    <footer class="receipt-invoice-footer">
+        Thank you for shopping with ForgeFit Fitness Market!
+    </footer>
+</section>

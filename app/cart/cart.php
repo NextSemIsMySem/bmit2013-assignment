@@ -15,8 +15,8 @@ $items = $stmt->fetchAll();
 $subtotal = 0;
 $selectableCount = 0;
 foreach ($items as $item) {
-    $subtotal += $item->price * $item->quantity;
     if ($item->availability && $item->stock >= 1) {
+        $subtotal += $item->price * $item->quantity;
         $selectableCount++;
     }
 }

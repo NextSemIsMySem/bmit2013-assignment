@@ -728,6 +728,8 @@ cartItemCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', recalcCartSelection);
 });
 
+recalcCartSelection();
+
 document.getElementById('cart-form')?.addEventListener('submit', event => {
     if (!document.querySelectorAll('.cart-item-select:checked').length) {
         event.preventDefault();

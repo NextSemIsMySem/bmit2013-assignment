@@ -96,10 +96,17 @@ function create_order_from_cart(
         $paymentStmt->execute([$orderId, $total, $paymentMethod, $paymentStatus, $transactionReference]);
 
         if ($voucher) {
+            // Guarded the same way as the stock decrement above: only claims
+            // the voucher if it's still active, so two concurrent checkouts
+            // racing on the same one-time code can't both redeem it.
             $voucherUpdate = $db->prepare(
-                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ?"
+                "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ? AND status = 'active'"
             );
             $voucherUpdate->execute([$voucher->id]);
+
+            if ($voucherUpdate->rowCount() === 0) {
+                throw new RuntimeException('This voucher was just used elsewhere. Please remove it and try again.');
+            }
         }
 
         $cartProductIdsToClear ??= array_map(fn($item) => $item->product_id, $items);

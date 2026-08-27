@@ -35,6 +35,7 @@ include '../_head.php';
 
 <section class="order-confirmation">
     <p class="order-confirmation-message">Thank you! Your order #<?= $order->order_id ?> has been placed.</p>
+    <p class="order-confirmation-submessage">A copy of this receipt has been emailed to your registered email address.</p>
 
     <?php include '../orders/_order_detail.php'; ?>
 
