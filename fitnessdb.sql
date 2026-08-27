@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `name` VARCHAR(100) NOT NULL,
     `role` ENUM('superadmin', 'admin', 'member') NOT NULL DEFAULT 'member',
     `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `email_verified` TINYINT(1) NOT NULL DEFAULT 1,
     `photo` VARCHAR(100) NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -191,5 +192,6 @@ CREATE TABLE IF NOT EXISTS `token` (
     `id`      VARCHAR(100) NOT NULL PRIMARY KEY,   -- sha1(uniqid() . rand())
     `expire`  DATETIME NOT NULL,
     `user_id` INT NOT NULL,
+    `type`    ENUM('reset', 'verification') NOT NULL DEFAULT 'reset',
     FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;

@@ -31,6 +31,8 @@ if (is_post()) {
 
         if ($u && !$u->active) {
             $_err['password'] = 'This account has been disabled.';
+        } elseif ($u && !$u->email_verified) {
+            $_err['password'] = 'Please verify your email before logging in.';
         } elseif ($u) {
             temp('info', 'Login successful.');
             login($u, '/index.php');

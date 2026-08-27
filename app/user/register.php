@@ -75,14 +75,42 @@ if (is_post()) {
         // Save photo
         $photo = save_photo($f, __DIR__ . '/../photos');
 
-        // Insert user as Member
+        // Create the account inactive until the email link is verified.
         $stm = $_db->prepare(
-            'INSERT INTO user (email, username, password, name, photo, role) VALUES (?, ?, SHA1(?), ?, ?, "member")'
+            'INSERT INTO user (email, username, password, name, photo, role, active, email_verified) VALUES (?, ?, SHA1(?), ?, ?, "member", 1, 0)'
         );
         $stm->execute([$email, $username, $password, $name, $photo]);
 
-        temp('info', 'Registration successful. You may now log in.');
-        redirect('/login.php');
+        $tokenId = bin2hex(random_bytes(32));
+        $tokenStmt = $_db->prepare(
+            'INSERT INTO token (id, expire, user_id, type) VALUES (?, ADDTIME(NOW(), "24:00"), ?, "verification")'
+        );
+        $tokenStmt->execute([$tokenId, $_db->lastInsertId()]);
+
+        $sent = false;
+        try {
+            $m = get_mail();
+            $m->addAddress($email, $name);
+            $m->isHTML(true);
+            $m->Subject = 'Verify your ForgeFit account';
+            $url = base("user/verify.php?id=$tokenId");
+            $m->Body = "<p>Dear " . encode($name) . ",</p>
+                        <p>Thank you for registering with ForgeFit Fitness Market.</p>
+                        <p>Please click <a href='$url'>here</a> to verify your email address. This link expires in 24 hours.</p>
+                        <p>From, ForgeFit Admin</p>";
+            $m->send();
+            $sent = true;
+        } catch (Exception $e) {
+            $_db->prepare('DELETE FROM token WHERE id = ?')->execute([$tokenId]);
+            $_db->prepare('DELETE FROM user WHERE email = ? AND active = 0')->execute([$email]);
+        }
+
+        if (!$sent) {
+            $_err['email'] = 'Could not send the verification email right now. Please try again later.';
+        } else {
+            temp('info', 'Registration successful. Check your email to verify your account.');
+            redirect('/login.php');
+        }
     }
 }
 
