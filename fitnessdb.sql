@@ -171,22 +171,6 @@ CREATE TABLE IF NOT EXISTS `stock_reminder` (
     FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 13. Review Table
-CREATE TABLE IF NOT EXISTS `review` (
-    `review_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `order_id` INT NOT NULL,
-    `product_id` INT NOT NULL,
-    `user_id` INT NOT NULL,
-    `rating` TINYINT UNSIGNED NOT NULL,
-    `comment` TEXT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY `order_product_unique` (`order_id`, `product_id`),
-    FOREIGN KEY (`order_id`) REFERENCES `orders`(`order_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`product_id`) REFERENCES `product`(`product_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 -- 14. Token Table (password reset links)
 CREATE TABLE IF NOT EXISTS `token` (
     `id`      VARCHAR(100) NOT NULL PRIMARY KEY,   -- sha1(uniqid() . rand())

@@ -8,8 +8,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  * Creates an order from a set of items inside a single DB transaction:
  * decrements stock (guarding against a stale/insufficient quantity), inserts
  * the order + its line items + its payment row, marks the voucher used (if
- * any), upserts the user's default shipping address, and clears whichever
- * cart_item rows the order actually covers.
+ * any), and clears whichever cart_item rows the order actually covers.
+ *
+ * $address is a snapshot of an existing address book entry the buyer picked
+ * at checkout — the address book itself is managed entirely from
+ * user/address.php, so this never writes back to the `address` table.
  *
  * $cartProductIdsToClear controls that last step: leave it null (the
  * default) to clear exactly the product_ids in $items — correct for a
@@ -97,37 +100,6 @@ function create_order_from_cart(
                 "UPDATE voucher SET status = 'used', used_at = NOW() WHERE id = ?"
             );
             $voucherUpdate->execute([$voucher->id]);
-        }
-
-        $existingAddress = $db->prepare('SELECT address_id FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL');
-        $existingAddress->execute([$user->user_id]);
-        $addressId = $existingAddress->fetchColumn();
-
-        if ($addressId) {
-            $addressUpdate = $db->prepare(
-                'UPDATE address SET street = ?, city = ?, state = ?, postal_code = ?, country = ? WHERE address_id = ?'
-            );
-            $addressUpdate->execute([
-                $address['street'],
-                $address['city'],
-                $address['state'],
-                $address['postal_code'],
-                $address['country'],
-                $addressId,
-            ]);
-        } else {
-            $addressInsert = $db->prepare(
-                'INSERT INTO address (user_id, street, city, state, postal_code, country, is_default)
-                 VALUES (?, ?, ?, ?, ?, ?, 1)'
-            );
-            $addressInsert->execute([
-                $user->user_id,
-                $address['street'],
-                $address['city'],
-                $address['state'],
-                $address['postal_code'],
-                $address['country'],
-            ]);
         }
 
         $cartProductIdsToClear ??= array_map(fn($item) => $item->product_id, $items);

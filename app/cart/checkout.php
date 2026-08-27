@@ -82,57 +82,35 @@ foreach ($items as $item) {
     $subtotal += $item->price * $item->quantity;
 }
 
-if (is_get()) {
-    $addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? AND is_default = 1 AND deleted_at IS NULL LIMIT 1');
-    $addressStmt->execute([$_user->user_id]);
-    $defaultAddress = $addressStmt->fetch();
+// Shipping address always comes from the buyer's address book (managed at
+// /user/address.php) — checkout only lets them pick which saved address to
+// ship to, never type one in freehand.
+$returnUrl = $_SERVER['REQUEST_URI'];
 
-    if ($defaultAddress) {
-        $_REQUEST['street'] = $defaultAddress->street;
-        $_REQUEST['city'] = $defaultAddress->city;
-        $_REQUEST['state'] = $defaultAddress->state;
-        $_REQUEST['postal_code'] = $defaultAddress->postal_code;
-        $_REQUEST['country'] = $defaultAddress->country;
-    }
+$addressStmt = $_db->prepare('SELECT * FROM address WHERE user_id = ? AND deleted_at IS NULL ORDER BY is_default DESC, address_id DESC');
+$addressStmt->execute([$_user->user_id]);
+$addresses = $addressStmt->fetchAll();
+
+if (!$addresses) {
+    temp('info', 'Please add a shipping address before checking out.');
+    redirect('/user/address-form.php?return=' . urlencode($returnUrl));
 }
 
 if (is_post()) {
-    $street = req('street');
-    $city = req('city');
-    $state = req('state');
-    $postalCode = req('postal_code');
-    $country = req('country');
+    $addressId = filter_var(req('address_id'), FILTER_VALIDATE_INT);
+    $selectedAddress = null;
+    foreach ($addresses as $candidate) {
+        if ((int) $candidate->address_id === $addressId) {
+            $selectedAddress = $candidate;
+            break;
+        }
+    }
+
     $paymentMethod = req('payment_method');
     $voucherCode = req('voucher_code');
 
-    if ($street === '') {
-        $_err['street'] = 'Street address is required.';
-    } elseif (strlen($street) > 255) {
-        $_err['street'] = 'Street address must be at most 255 characters.';
-    }
-
-    if ($city === '') {
-        $_err['city'] = 'City is required.';
-    } elseif (strlen($city) > 100) {
-        $_err['city'] = 'City must be at most 100 characters.';
-    }
-
-    if ($state === '') {
-        $_err['state'] = 'State is required.';
-    } elseif (strlen($state) > 100) {
-        $_err['state'] = 'State must be at most 100 characters.';
-    }
-
-    if ($postalCode === '') {
-        $_err['postal_code'] = 'Postal code is required.';
-    } elseif (strlen($postalCode) > 20) {
-        $_err['postal_code'] = 'Postal code must be at most 20 characters.';
-    }
-
-    if ($country === '') {
-        $_err['country'] = 'Country is required.';
-    } elseif (strlen($country) > 100) {
-        $_err['country'] = 'Country must be at most 100 characters.';
+    if (!$selectedAddress) {
+        $_err['address_id'] = 'Please select a shipping address.';
     }
 
     if (!array_key_exists($paymentMethod, $paymentMethods)) {
@@ -172,11 +150,11 @@ if (is_post()) {
 
     if (!$_err) {
         $addressFields = [
-            'street' => $street,
-            'city' => $city,
-            'state' => $state,
-            'postal_code' => $postalCode,
-            'country' => $country,
+            'street' => $selectedAddress->street,
+            'city' => $selectedAddress->city,
+            'state' => $selectedAddress->state,
+            'postal_code' => $selectedAddress->postal_code,
+            'country' => $selectedAddress->country,
         ];
 
         try {
@@ -227,6 +205,8 @@ if (is_post()) {
     }
 }
 
+$selectedAddressId = filter_var(req('address_id'), FILTER_VALIDATE_INT) ?: (int) $addresses[0]->address_id;
+
 $_title = 'Checkout';
 include '../_head.php';
 ?>
@@ -244,13 +224,22 @@ include '../_head.php';
 
     <section class="checkout-section">
         <h2>Shipping Address</h2>
-        <div class="form checkout-form">
-            <?php html_text('street', 'Street'); ?>
-            <?php html_text('city', 'City'); ?>
-            <?php html_text('state', 'State'); ?>
-            <?php html_text('postal_code', 'Postal Code'); ?>
-            <?php html_text('country', 'Country'); ?>
+        <div class="address-list checkout-address-list">
+            <?php foreach ($addresses as $address): ?>
+                <label class="address-card address-card--selectable">
+                    <input
+                        type="radio"
+                        name="address_id"
+                        value="<?= (int) $address->address_id ?>"
+                        <?= $selectedAddressId === (int) $address->address_id ? 'checked' : '' ?>
+                    >
+                    <h3><?= encode($address->label) ?> <?php if ($address->is_default): ?><span class="address-default">Default</span><?php endif; ?></h3>
+                    <p><?= encode($address->street) ?><br><?= encode($address->city) ?>, <?= encode($address->state) ?> <?= encode($address->postal_code) ?><br><?= encode($address->country) ?></p>
+                </label>
+            <?php endforeach; ?>
         </div>
+        <?= err('address_id') ?>
+        <p><a href="/user/address-form.php?return=<?= encode(urlencode($returnUrl)) ?>">+ Add New Address</a></p>
     </section>
 
     <section class="checkout-section">
