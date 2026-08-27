@@ -14,10 +14,11 @@ if (!$voucher) {
     redirect('vouchers.php');
 }
 
-$categories = $_db->query('SELECT category_id, name FROM category ORDER BY name')->fetchAll();
-$categoryOptions = [];
-foreach ($categories as $category) {
-    $categoryOptions[$category->category_id] = $category->name;
+// Expired vouchers are read-only — editing them here would never actually
+// revive them (this page never touches `status`), so send admins straight
+// to the archived detail view instead of a form that can't do anything.
+if ($voucher->status === 'expired') {
+    redirect('voucher-archived-detail.php?id=' . $id);
 }
 
 $codesStmt = $_db->prepare('SELECT id, code, status FROM voucher WHERE voucher_id = ? ORDER BY id');
@@ -26,8 +27,6 @@ $existingCodes = $codesStmt->fetchAll();
 
 if (is_post()) {
     $name = req('name');
-    $categoryToggle = req('category_toggle') === 'on';
-    $categoryId = req('category_id');
     $startDate = req('start_date');
     $startTime = req('start_time', '00:00');
     $endDate = req('end_date');
@@ -46,12 +45,6 @@ if (is_post()) {
         $_err['name'] = 'Name is required.';
     } elseif (strlen($name) > 100) {
         $_err['name'] = 'Maximum 100 characters.';
-    }
-
-    if ($categoryToggle && $categoryId === '') {
-        $_err['category_id'] = 'Please select a category, or turn this off.';
-    } elseif ($categoryId !== '' && !array_key_exists($categoryId, $categoryOptions)) {
-        $_err['category_id'] = 'Please select a valid category.';
     }
 
     if ($startDate === '') {
@@ -87,12 +80,11 @@ if (is_post()) {
     if (!$_err) {
         $stmt = $_db->prepare(
             'UPDATE voucher_configuration
-             SET name = ?, category_id = ?, discount_type = ?, discount_value = ?, discount_percentage = ?, minimum_spend = ?, start_date = ?, end_date = ?
+             SET name = ?, discount_type = ?, discount_value = ?, discount_percentage = ?, minimum_spend = ?, start_date = ?, end_date = ?
              WHERE voucher_id = ?'
         );
         $stmt->execute([
             $name,
-            $categoryId !== '' ? $categoryId : null,
             $discountType,
             $discountType === 'fixed' ? $discountValue : null,
             $discountType === 'percentage' ? $discountPercentage : null,
@@ -161,8 +153,6 @@ if (is_post()) {
 } else {
     // Pre-fill sticky form fields from the DB on first (GET) load.
     $_REQUEST['name'] = $voucher->name;
-    $_REQUEST['category_id'] = $voucher->category_id;
-    $_REQUEST['category_toggle'] = $voucher->category_id !== null ? 'on' : '';
     $_REQUEST['start_date'] = substr($voucher->start_date, 0, 10);
     $_REQUEST['start_time'] = substr($voucher->start_date, 11, 5);
     $_REQUEST['end_date'] = substr($voucher->end_date, 0, 10);
@@ -198,7 +188,7 @@ include '../../_head.php';
                         <?php else: ?>
                             <button type="button" class="individual-voucher-row__randomize">Randomize</button>
                             <button type="button" class="individual-voucher-row__toggle" title="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
-                                <img src="/images/<?= $existingCode->status === 'active' ? 'disable.png' : 'activate.png' ?>" alt="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
+                                <img src="/images/<?= $existingCode->status === 'active' ? 'activate.png' : 'disable.png' ?>" alt="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
                             </button>
                         <?php endif; ?>
                     </div>
@@ -219,16 +209,6 @@ include '../../_head.php';
         <p id="voucher-code-duplicate-message">This voucher code is occupied.</p>
         <button type="button" id="voucher-code-duplicate-ok">OK</button>
     </dialog>
-
-    <?php $categoryChecked = req('category_toggle') === 'on'; ?>
-    <label class="toggle-field">
-        <input type="checkbox" name="category_toggle" data-toggle-target="#category-field" <?= $categoryChecked ? 'checked' : '' ?>>
-        <span class="toggle-switch"><span class="toggle-switch__thumb"></span></span>
-        Restrict to a specific category
-    </label>
-    <div id="category-field" <?= $categoryChecked ? '' : 'hidden' ?>>
-        <?php html_select('category_id', 'Category', $categoryOptions, true); ?>
-    </div>
 
     <?php $minimumSpendChecked = req('minimum_spend_toggle') === 'on'; ?>
     <label class="toggle-field">
@@ -334,7 +314,7 @@ include '../../_head.php';
         const toggle = row.querySelector('.individual-voucher-row__toggle');
         const img = toggle?.querySelector('img');
         if (toggle && img) {
-            img.src = '/images/' + (status === 'active' ? 'disable.png' : 'activate.png');
+            img.src = '/images/' + (status === 'active' ? 'activate.png' : 'disable.png');
             img.alt = status === 'active' ? 'Disable' : 'Activate';
             toggle.title = img.alt;
         }
@@ -469,7 +449,7 @@ include '../../_head.php';
         toggle.className = 'individual-voucher-row__toggle';
         toggle.title = 'Disable';
         const img = document.createElement('img');
-        img.src = '/images/disable.png';
+        img.src = '/images/activate.png';
         img.alt = 'Disable';
         toggle.appendChild(img);
         buttons.appendChild(toggle);

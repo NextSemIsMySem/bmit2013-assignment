@@ -11,7 +11,9 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  * - $adminColumns: ['property_name' => 'Column label', ...]
  * - $adminRows: iterable rows (objects or associative arrays)
  * - $adminActions: action definitions with label, icon, method, and url callback
- *   (an action may also set 'disabled' => true while its endpoint is not ready)
+ *   (an action may also set 'disabled' => true while its endpoint is not ready, or
+ *   'hidden' => true|callable(row) to omit the button entirely for that row instead
+ *   of just greying it out — e.g. an action that isn't valid for that row at all)
  *
  * Optional variable:
  * - $adminEmptyMessage: message shown when there are no rows
@@ -29,6 +31,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   renders a small icon next to an existing column's text (no separate column/header).
  *   The icon is only shown when the row's `{field}` property is non-empty, so it can be
  *   used for conditional badges (e.g. only flag low/out-of-stock rows).
+ * - $adminColumnDisplay: ['field_name' => callable(row): string, ...] overrides the
+ *   text shown (and the cell's title tooltip) for that column, without touching the
+ *   row's actual property — sorting and actions still read the real value.
+ * - $adminColumnClass: ['field_name' => callable(row): ?string, ...] adds a CSS class
+ *   to that column's cell, e.g. to color status text green/red based on the row.
  * - $adminActionsRenderer: callable(row): string returning raw HTML for the Action
  *   cell, used instead of the default $adminActions icon-button list when set
  *   (pass $adminActions = [] in that case).
@@ -42,6 +49,16 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   that opens a dialog with the given fields; applying submits them as GET
  *   params (resetting to page 1), same as search/sort. Leave 'fields' empty
  *   to still show the button while its filters are being decided later.
+ *   Two extra field types cover the toggle patterns from the voucher
+ *   create/update forms: type 'toggle' is an optional filter — ['name' =>
+ *   'query param for the checkbox', 'label' => toggle text, 'fields' =>
+ *   [nested field spec, ...]] — the nested fields only apply once the
+ *   toggle is checked (e.g. "Require a minimum spend" revealing an amount
+ *   input). Type 'discount' reproduces the percentage/amount switch:
+ *   ['type_name' => 'query param for which side is active (\'fixed\' or
+ *   default \'percentage\')', 'percentage_name'/'amount_name' => query
+ *   params for each side's input, 'percentage_label'/'amount_label' =>
+ *   optional input labels].
  * - $adminBulkSelect: ['key' => 'row id property', 'storageKey' => unique
  *   localStorage key for this table, 'selectAllUrl' => optional GET endpoint
  *   returning a JSON array of every id matching the current search/filter
@@ -73,6 +90,8 @@ $adminFilter ??= null;
 $adminToolbarButtons ??= [];
 $adminIconColumns ??= [];
 $adminInlineIcon ??= null;
+$adminColumnDisplay ??= [];
+$adminColumnClass ??= [];
 $adminActionsRenderer ??= null;
 $adminActionsWidth ??= null;
 $adminBulkSelect ??= null;
@@ -89,24 +108,120 @@ if ($adminSearch) {
 if ($adminFilter) {
     $adminFilter['fields'] ??= [];
 
+    // A field normally maps to one query param ('name'), but the composite
+    // types below map to several ('toggle' nests sub-fields, 'discount'
+    // splits into a type switch + one input per side) — this walks any
+    // field down to the full list of param names it actually owns.
+    $adminFilterFieldNames = function ($field) use (&$adminFilterFieldNames) {
+        if (($field['type'] ?? '') === 'toggle') {
+            $names = [$field['name']];
+            foreach ($field['fields'] ?? [] as $subField) {
+                $names = array_merge($names, $adminFilterFieldNames($subField));
+            }
+            return $names;
+        }
+        if (($field['type'] ?? '') === 'discount') {
+            return [$field['type_name'], $field['percentage_name'], $field['amount_name']];
+        }
+        return [$field['name']];
+    };
+    $adminFilterAllNames = array_merge(...array_map($adminFilterFieldNames, $adminFilter['fields']) ?: [[]]);
+
+    // Renders one filter field. 'toggle' reveals nested fields when checked
+    // (the "Restrict to a specific category" / "Require a minimum spend"
+    // pattern from the voucher create form); 'discount' reproduces that same
+    // form's percentage/amount switch, showing whichever input matches the
+    // selected side.
+    $adminRenderFilterField = function ($field) use (&$adminRenderFilterField) {
+        $fieldType = $field['type'] ?? 'select';
+
+        if ($fieldType === 'toggle') {
+            $fieldName = $field['name'];
+            $toggleChecked = req($fieldName) === 'on';
+            $targetId = 'admin-filter-target-' . preg_replace('/[^a-zA-Z0-9_-]/', '-', $fieldName);
+            ?>
+            <label class="toggle-field full-width-label">
+                <input type="checkbox" name="<?= encode($fieldName) ?>" data-toggle-target="#<?= $targetId ?>" <?= $toggleChecked ? 'checked' : '' ?>>
+                <span class="toggle-switch"><span class="toggle-switch__thumb"></span></span>
+                <?= encode($field['label'] ?? $fieldName) ?>
+            </label>
+            <div id="<?= $targetId ?>" class="full-width-label" <?= $toggleChecked ? '' : 'hidden' ?>>
+                <?php foreach ($field['fields'] ?? [] as $subField): $adminRenderFilterField($subField); endforeach; ?>
+            </div>
+            <?php
+            return;
+        }
+
+        if ($fieldType === 'discount') {
+            $typeName = $field['type_name'];
+            $percentageName = $field['percentage_name'];
+            $amountName = $field['amount_name'];
+            $typeValue = req($typeName) === 'fixed' ? 'fixed' : 'percentage';
+            $percentageRowId = 'admin-filter-row-' . $percentageName;
+            $amountRowId = 'admin-filter-row-' . $amountName;
+            ?>
+            <label class="full-width-label"><?= encode($field['label'] ?? 'Discount') ?></label>
+            <label class="toggle-field toggle-field--discount">
+                <span class="toggle-field__side-label">Percentage</span>
+                <input type="checkbox" name="<?= encode($typeName) ?>" value="fixed" data-toggle-target="#<?= $amountRowId ?>" data-toggle-target-off="#<?= $percentageRowId ?>" <?= $typeValue === 'fixed' ? 'checked' : '' ?>>
+                <span class="toggle-switch toggle-switch--discount"><span class="toggle-switch__thumb"></span></span>
+                <span class="toggle-field__side-label">Amount</span>
+            </label>
+            <div id="<?= $percentageRowId ?>" class="full-width-label" <?= $typeValue === 'fixed' ? 'hidden' : '' ?>>
+                <label for="admin-filter-<?= encode($percentageName) ?>"><?= encode($field['percentage_label'] ?? 'Min Discount %') ?></label>
+                <input type="number" id="admin-filter-<?= encode($percentageName) ?>" name="<?= encode($percentageName) ?>" value="<?= encode(req($percentageName, '')) ?>">
+            </div>
+            <div id="<?= $amountRowId ?>" class="full-width-label" <?= $typeValue !== 'fixed' ? 'hidden' : '' ?>>
+                <label for="admin-filter-<?= encode($amountName) ?>"><?= encode($field['amount_label'] ?? 'Min Discount Amount (RM)') ?></label>
+                <input type="number" id="admin-filter-<?= encode($amountName) ?>" name="<?= encode($amountName) ?>" value="<?= encode(req($amountName, '')) ?>">
+            </div>
+            <?php
+            return;
+        }
+
+        $fieldName = $field['name'];
+        $fieldLabel = $field['label'] ?? $fieldName;
+        $fieldValue = req($fieldName, '');
+        ?>
+        <label for="admin-filter-<?= encode($fieldName) ?>"><?= encode($fieldLabel) ?></label>
+        <?php if ($fieldType === 'select'): ?>
+            <select id="admin-filter-<?= encode($fieldName) ?>" name="<?= encode($fieldName) ?>">
+                <option value=""><?= encode($field['placeholder'] ?? 'All') ?></option>
+                <?php foreach ($field['options'] ?? [] as $optionValue => $optionLabel): ?>
+                    <option value="<?= encode($optionValue) ?>" <?= (string) $optionValue === $fieldValue ? 'selected' : '' ?>>
+                        <?= encode($optionLabel) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        <?php else: ?>
+            <input
+                type="<?= encode($fieldType) ?>"
+                id="admin-filter-<?= encode($fieldName) ?>"
+                name="<?= encode($fieldName) ?>"
+                value="<?= encode($fieldValue) ?>"
+            >
+        <?php endif; ?>
+        <?php
+    };
+
     // Hidden inputs carry every current param except the filter fields
     // themselves and pagination (a new filter should land back on page 1).
     $adminFilterHiddenParams = $_GET;
     unset($adminFilterHiddenParams['page'], $adminFilterHiddenParams['per_page']);
-    foreach ($adminFilter['fields'] as $field) {
-        unset($adminFilterHiddenParams[$field['name']]);
+    foreach ($adminFilterAllNames as $paramName) {
+        unset($adminFilterHiddenParams[$paramName]);
     }
 
     // Reset clears just the filter fields, keeping search/sort/page as-is.
     $adminFilterResetParams = $_GET;
     unset($adminFilterResetParams['page']);
-    foreach ($adminFilter['fields'] as $field) {
-        unset($adminFilterResetParams[$field['name']]);
+    foreach ($adminFilterAllNames as $paramName) {
+        unset($adminFilterResetParams[$paramName]);
     }
 
     $adminFilterActive = false;
-    foreach ($adminFilter['fields'] as $field) {
-        if (req($field['name'], '') !== '') {
+    foreach ($adminFilterAllNames as $paramName) {
+        if (req($paramName, '') !== '') {
             $adminFilterActive = true;
             break;
         }
@@ -177,7 +292,7 @@ if ($adminPaginate) {
                 <button type="submit" class="admin-table-search__button" aria-label="<?= encode($adminSearchLabel) ?>">
                     <img src="/images/search.png" alt="">
                 </button>
-                <a href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
+                <a class="admin-table-search-reset" href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
             </form>
         <?php endif; ?>
         <?php if ($adminFilter): ?>
@@ -197,38 +312,14 @@ if ($adminPaginate) {
                             <input type="hidden" name="<?= encode($key) ?>" value="<?= encode($value) ?>">
                         <?php endif; ?>
                     <?php endforeach; ?>
-                    <?php foreach ($adminFilter['fields'] as $field): ?>
-                        <?php
-                            $fieldName = $field['name'];
-                            $fieldLabel = $field['label'] ?? $fieldName;
-                            $fieldType = $field['type'] ?? 'select';
-                            $fieldValue = req($fieldName, '');
-                        ?>
-                        <label for="admin-filter-<?= encode($fieldName) ?>"><?= encode($fieldLabel) ?></label>
-                        <?php if ($fieldType === 'select'): ?>
-                            <select id="admin-filter-<?= encode($fieldName) ?>" name="<?= encode($fieldName) ?>">
-                                <option value=""><?= encode($field['placeholder'] ?? 'All') ?></option>
-                                <?php foreach ($field['options'] ?? [] as $optionValue => $optionLabel): ?>
-                                    <option value="<?= encode($optionValue) ?>" <?= (string) $optionValue === $fieldValue ? 'selected' : '' ?>>
-                                        <?= encode($optionLabel) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        <?php else: ?>
-                            <input
-                                type="<?= encode($fieldType) ?>"
-                                id="admin-filter-<?= encode($fieldName) ?>"
-                                name="<?= encode($fieldName) ?>"
-                                value="<?= encode($fieldValue) ?>"
-                            >
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    <?php foreach ($adminFilter['fields'] as $field): $adminRenderFilterField($field); endforeach; ?>
                     <?php if (!$adminFilter['fields']): ?>
                         <p class="field-note full-width-label">No filters configured for this table yet.</p>
                     <?php endif; ?>
                     <section class="buttons">
                         <button type="submit" class="btn-green">Apply</button>
                         <a class="btn-dark" href="?<?= encode(http_build_query($adminFilterResetParams)) ?>">Reset</a>
+                        <button type="button" class="btn-red" id="admin-table-filter-close">Exit</button>
                     </section>
                 </form>
             </dialog>
@@ -355,8 +446,12 @@ if ($adminPaginate) {
                             <img class="admin-table__status-icon" src="/images/<?= encode($value) ?>" alt="<?= encode($iconLabel) ?>" title="<?= encode($iconLabel) ?>">
                         </td>
                     <?php else: ?>
-                        <td title="<?= encode($value) ?>">
-                            <?= encode($value) ?>
+                        <?php
+                            $displayValue = isset($adminColumnDisplay[$field]) ? $adminColumnDisplay[$field]($row) : $value;
+                            $columnClass = isset($adminColumnClass[$field]) ? $adminColumnClass[$field]($row) : null;
+                        ?>
+                        <td title="<?= encode($displayValue) ?>"<?= $columnClass ? ' class="' . encode($columnClass) . '"' : '' ?>>
+                            <?= encode($displayValue) ?>
                             <?php if ($adminInlineIcon && $field === $adminInlineIcon['column']): ?>
                                 <?php
                                     $inlineIconField = $adminInlineIcon['field'];
@@ -381,6 +476,10 @@ if ($adminPaginate) {
                             <?php
                                 // Fields may be a plain value or a closure(row) for per-row state (e.g. disable/activate).
                                 $resolve = fn($value) => $value instanceof Closure ? $value($row) : $value;
+
+                                if (!empty($resolve($action['hidden'] ?? false))) {
+                                    continue;
+                                }
 
                                 $disabled = !empty($resolve($action['disabled'] ?? false));
                                 $url = $disabled ? null : $action['url']($row);

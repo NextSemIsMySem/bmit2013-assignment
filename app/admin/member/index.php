@@ -69,7 +69,7 @@ $adminActions = [
     ],
     [
         'label'   => fn($row) => $row->active ? 'Disable member' : 'Activate member',
-        'icon'    => fn($row) => $row->active ? 'disable.png' : 'activate.png',
+        'icon'    => fn($row) => $row->active ? 'activate.png' : 'disable.png',
         'method'  => 'post',
         'url'     => fn($row) => ($row->active ? 'member-disable.php' : 'member-activate.php') . '?id=' . $row->user_id,
         'confirm' => fn($row) => $row->active ? 'Disable this member?' : 'Activate this member?',

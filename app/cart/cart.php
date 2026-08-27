@@ -15,8 +15,12 @@ $items = $stmt->fetchAll();
 $subtotal = 0;
 $selectableCount = 0;
 foreach ($items as $item) {
-    $subtotal += $item->price * $item->quantity;
+    // Only items that start checked (available, in stock) count toward the
+    // initial "N selected" total — otherwise the number shown here would
+    // include unselectable items until the user touches a checkbox and the
+    // JS recalculation takes over.
     if ($item->availability && $item->stock >= 1) {
+        $subtotal += $item->price * $item->quantity;
         $selectableCount++;
     }
 }

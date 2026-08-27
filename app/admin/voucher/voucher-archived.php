@@ -7,25 +7,19 @@ apply_voucher_expiry($_db);
 cleanup_stale_expired_vouchers($_db);
 
 $stmt = $_db->query(
-    "SELECT vc.*, c.name AS category_name,
+    "SELECT vc.*,
             EXISTS (SELECT 1 FROM voucher v WHERE v.voucher_id = vc.voucher_id AND v.status = 'used') AS has_used
      FROM voucher_configuration vc
-     LEFT JOIN category c ON c.category_id = vc.category_id
      WHERE vc.status = 'expired'
      ORDER BY vc.end_date DESC"
 );
 $vouchers = $stmt->fetchAll();
-
-foreach ($vouchers as $voucher) {
-    $voucher->category_display = $voucher->category_name ?? 'All';
-}
 
 $_title = 'Archived Vouchers';
 include '../../_head.php';
 
 $adminColumns = [
     'name'            => 'Name',
-    'category_display' => 'Category',
     'start_date'      => 'Start Date',
     'end_date'        => 'End Date',
 ];
@@ -52,6 +46,19 @@ $adminActions = [
         // here (same rule the 3-day auto-cleanup follows) — only unused
         // ones can be removed, whether manually now or automatically later.
         'disabled' => fn($row) => (bool) $row->has_used,
+    ],
+];
+$adminBulkSelect = [
+    'key'          => 'voucher_id',
+    'storageKey'   => 'bulk-select-archived-vouchers',
+    'selectAllUrl' => 'voucher-archived-ids.php',
+    'actions'      => [
+        [
+            'label'   => 'Delete',
+            'icon'    => 'delete.png',
+            'url'     => 'voucher-bulk-delete.php',
+            'confirm' => 'Delete the selected vouchers? Any with real order history will be skipped.',
+        ],
     ],
 ];
 include '../admin_table.php';

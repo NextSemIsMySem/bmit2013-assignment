@@ -66,7 +66,7 @@
         <?php endif; ?>
         <!-- Further module nav links are added here per phase (e.g. Product, Cart) -->
         <?php if (!is_admin()): ?>
-        <a href="/product/category.php?category=dumbbells" class="<?= ($_GET['category'] ?? '') === 'dumbbells' ? 'active' : '' ?>">Dumbbells</a>
+        <a href="/product/category.php?category=equipment" class="<?= ($_GET['category'] ?? '') === 'equipment' ? 'active' : '' ?>">Equipment</a>
         <a href="/product/category.php?category=protein_powder" class="<?= ($_GET['category'] ?? '') === 'protein_powder' ? 'active' : '' ?>">Protein Powder</a>
         <a href="/product/category.php?category=supplements" class="<?= ($_GET['category'] ?? '') === 'supplements' ? 'active' : '' ?>">Supplements</a>
         <a href="/product/category.php?category=other" class="<?= ($_GET['category'] ?? '') === 'other' ? 'active' : '' ?>">Others</a>
