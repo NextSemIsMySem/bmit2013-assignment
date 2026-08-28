@@ -527,6 +527,7 @@ if (addressMap) {
 
         const latitudeInput = document.querySelector('#address-latitude');
         const longitudeInput = document.querySelector('#address-longitude');
+        const placeIdInput = document.querySelector('#address-place-id');
         const streetInput = document.querySelector('#address-street');
         const cityInput = document.querySelector('#address-city');
         const stateInput = document.querySelector('#address-state');
@@ -553,6 +554,7 @@ if (addressMap) {
             countryInput.value = components.country || '';
             latitudeInput.value = result.geometry.location.lat();
             longitudeInput.value = result.geometry.location.lng();
+            placeIdInput.value = result.place_id || '';
         };
 
         const chooseLocation = location => {
@@ -568,8 +570,11 @@ if (addressMap) {
         map.addListener('click', event => chooseLocation(event.latLng));
         marker.addListener('dragend', event => chooseLocation(event.latLng));
 
-        const autocomplete = new google.maps.places.Autocomplete(searchInput, {fields: ['address_components', 'geometry'], types: ['address']});
+        const autocomplete = new google.maps.places.Autocomplete(searchInput, {fields: ['address_components', 'geometry', 'place_id'], types: ['address']});
         autocomplete.bindTo('bounds', map);
+        searchInput.addEventListener('input', () => {
+            placeIdInput.value = '';
+        });
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             if (!place.geometry?.location) {
@@ -778,6 +783,8 @@ cartSelectAll?.addEventListener('change', () => {
 cartItemCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', recalcCartSelection);
 });
+
+recalcCartSelection();
 
 document.getElementById('cart-form')?.addEventListener('submit', event => {
     if (!document.querySelectorAll('.cart-item-select:checked').length) {

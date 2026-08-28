@@ -2,6 +2,7 @@
 require '../_base.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
+require '../orders/_receipt_mail.php';
 auth('member');
 
 $sessionId = req('session_id');
@@ -49,6 +50,8 @@ $_db->beginTransaction();
 $_db->prepare("UPDATE orders SET status = 'paid' WHERE order_id = ?")->execute([$order->order_id]);
 $_db->prepare("UPDATE payment SET status = 'success' WHERE order_id = ?")->execute([$order->order_id]);
 $_db->commit();
+
+send_order_receipt_email($_db, $order->order_id);
 
 temp('info', 'Payment successful.');
 redirect('/cart/order-confirmation.php?id=' . $order->order_id);

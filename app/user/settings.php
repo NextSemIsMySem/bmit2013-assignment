@@ -9,6 +9,7 @@ $_backLabel = 'Back to Home';
 include '../_head.php';
 ?>
 
+<p>Here you can manage your account settings.</p>
 <section class="buttons">
     <a class="btn-green" href="/user/profile.php">Change Profile</a>
     <a class="btn-green" href="/user/change-password.php">Change Password</a>

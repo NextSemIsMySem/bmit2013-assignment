@@ -37,14 +37,21 @@ $reason = mb_substr($reason, 0, 255);
 
 // Keep the member's original cancellation_reason as context for why they
 // asked — only the "pending" flag clears; the admin's reason is recorded
-// alongside it.
-$_db->prepare(
+// alongside it. The WHERE guard makes this a no-op if the request was
+// already approved/rejected elsewhere in the meantime (e.g. two admin tabs).
+$rejectStmt = $_db->prepare(
     'UPDATE orders
      SET cancellation_requested_at = NULL,
          cancellation_rejected_at = NOW(),
          cancellation_rejection_reason = ?
-     WHERE order_id = ?'
-)->execute([$reason, $id]);
+     WHERE order_id = ? AND cancellation_requested_at IS NOT NULL'
+);
+$rejectStmt->execute([$reason, $id]);
+
+if ($rejectStmt->rowCount() === 0) {
+    temp('info', 'This cancellation request could not be rejected — it may have already been handled.');
+    redirect('order-detail.php?id=' . $id);
+}
 
 temp('info', 'Cancellation request rejected. The order continues as normal.');
 redirect('order-detail.php?id=' . $id);

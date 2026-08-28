@@ -47,7 +47,7 @@ $finalReason = ($reason === 'Others' && $reasonNote !== '') ? $reasonNote : $rea
 $finalReason = mb_substr($finalReason, 0, 255);
 
 // This only records the request — the order's real status is left as-is
-// until an admin approves it (admin side not built yet).
+// until an admin approves or rejects it from admin/order/order-detail.php.
 $update = $_db->prepare(
     'UPDATE orders SET cancellation_requested_at = NOW(), cancellation_reason = ? WHERE order_id = ?'
 );

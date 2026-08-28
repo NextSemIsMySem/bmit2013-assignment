@@ -5,6 +5,7 @@ require '_stripe_session.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
 require '../admin/voucher/_voucher_expire.php';
+require '../orders/_receipt_mail.php';
 auth('member');
 
 apply_voucher_expiry($_db);
@@ -183,6 +184,7 @@ if (is_post()) {
 
             if (!$_err) {
                 if ($paymentMethod === 'cod') {
+                    send_order_receipt_email($_db, $orderId);
                     temp('info', 'Order placed successfully.');
                     redirect('/cart/order-confirmation.php?id=' . $orderId);
                 }

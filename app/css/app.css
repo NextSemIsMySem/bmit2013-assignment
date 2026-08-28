@@ -2897,6 +2897,12 @@ button.checkout-back {
     color: #1a1a2e;
 }
 
+.order-confirmation-submessage {
+    margin-top: -12px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
 /* Order history / detail (Shopee-style) ------------------------------------ */
 
 .order-tabs {
@@ -3432,7 +3438,18 @@ button.checkout-back {
 @media print {
     header, nav, footer, #info, dialog,
     .buttons, .checkout-back, .order-cancel-button,
-    .place-order-button, .purchase-button {
+    .place-order-button, .purchase-button,
+    main > h1,
+    .order-confirmation-message,
+    .order-confirmation-submessage,
+    .admin-order-customer,
+    .order-cancelled-banner,
+    .order-request-banner,
+    .order-rejected-banner,
+    .order-timeline,
+    .order-detail-info,
+    .order-detail-items,
+    .order-detail-totals {
         display: none !important;
     }
 
@@ -3447,18 +3464,103 @@ button.checkout-back {
     .order-confirmation {
         max-width: none;
     }
+}
 
-    .order-detail-card,
-    .order-cancelled-banner,
-    .order-request-banner,
-    .order-rejected-banner {
-        box-shadow: none;
-        border: 1px solid #000000;
+/* Receipt invoice (print-only) ------------------------------------------- */
+
+.receipt-invoice {
+    display: none;
+}
+
+@media print {
+    .receipt-invoice {
+        display: block;
+        max-width: 700px;
+        margin: 0 auto;
+        color: #000000;
+        font-family: Georgia, 'Times New Roman', serif;
     }
 
-    .order-timeline-step.is-done .order-timeline-label,
-    .order-timeline-step.is-current .order-timeline-label {
-        color: #000000;
+    .receipt-invoice-header {
+        text-align: center;
+        margin: 0 0 20px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #000000;
+    }
+
+    .receipt-invoice-header h2 {
+        margin: 0 0 4px;
+        font-size: 24px;
+        letter-spacing: 0.04em;
+    }
+
+    .receipt-invoice-header p {
+        margin: 0;
+        font-size: 13px;
+        color: #333333;
+    }
+
+    .receipt-invoice-meta,
+    .receipt-invoice-parties {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        margin: 0 0 18px;
+        font-size: 13px;
+        line-height: 1.7;
+    }
+
+    .receipt-invoice-meta-right {
+        text-align: right;
+    }
+
+    .receipt-invoice-table {
+        width: 100%;
+        margin: 0 0 18px;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .receipt-invoice-table th,
+    .receipt-invoice-table td {
+        padding: 7px 10px;
+        border: 1px solid #000000;
+        text-align: left;
+    }
+
+    .receipt-invoice-table th:not(:first-child),
+    .receipt-invoice-table td:not(:first-child) {
+        text-align: right;
+    }
+
+    .receipt-invoice-totals {
+        max-width: 280px;
+        margin: 0 0 24px auto;
+        font-size: 13px;
+    }
+
+    .receipt-invoice-totals p {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 4px 0;
+    }
+
+    .receipt-invoice-grand-total {
+        margin-top: 8px !important;
+        padding-top: 8px;
+        border-top: 1px solid #000000;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .receipt-invoice-footer {
+        margin-top: 24px;
+        padding-top: 14px;
+        border-top: 1px dashed #000000;
+        text-align: center;
+        font-size: 13px;
+        font-style: italic;
     }
 }
 

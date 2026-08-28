@@ -3,6 +3,7 @@ require '../_base.php';
 require '../cart/_stripe_session.php';
 require '../_stripe_config.php';
 require '../lib/stripe.php';
+require '_status.php';
 auth('member');
 
 if (!is_post()) {
@@ -16,7 +17,8 @@ if (!$orderId) {
 }
 
 $stmt = $_db->prepare(
-    'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status, p.payment_method
+    'SELECT o.order_id, o.subtotal, o.shipping_fee, o.discount_amount, o.status,
+            o.cancellation_requested_at, p.payment_method
      FROM orders o
      JOIN payment p ON p.order_id = o.order_id
      WHERE o.order_id = ? AND o.user_id = ?'
@@ -29,7 +31,7 @@ if (!$order) {
     redirect('/orders/history.php');
 }
 
-if ($order->status !== 'pending' || $order->payment_method !== 'card') {
+if ($order->status !== 'pending' || $order->payment_method !== 'card' || order_has_pending_cancellation($order)) {
     temp('info', 'This order cannot be paid for again.');
     redirect('/orders/detail.php?id=' . $orderId);
 }
