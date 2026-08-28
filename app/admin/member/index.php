@@ -12,7 +12,6 @@ $fields = [
     'username'   => 'Username',
     'name'       => 'Name',
     'email'      => 'Email',
-    'role'       => 'Role',
     'created_at' => 'Joined',
 ];
 
@@ -96,12 +95,6 @@ $adminBulkSelect = [
             'confirm'   => 'Activate the selected members?',
             'class'     => 'admin-bulk-bar__action--green',
             'countWhen' => 0,
-        ],
-        [
-            'label'   => 'Delete',
-            'icon'    => 'delete.png',
-            'url'     => 'member-bulk-delete.php',
-            'confirm' => 'Delete the selected members? Members with orders will be skipped.',
         ],
     ],
 ];
