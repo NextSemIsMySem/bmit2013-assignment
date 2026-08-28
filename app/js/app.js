@@ -62,6 +62,8 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     const storageKey = bar.dataset.storageKey;
     const statusStorageKey = `${storageKey}-statuses`;
     const selectAllUrl = bar.dataset.selectAllUrl;
+    const selectAllKey = bar.dataset.selectAllKey;
+    const selectAllStatusKey = bar.dataset.selectAllStatusKey;
 
     // Selection should persist across pagination of the SAME table (same
     // pathname, different query string) but not survive navigating away to
@@ -195,9 +197,10 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
             const rows = await response.json();
             const statuses = {};
             const ids = rows.map(row => {
-                if (typeof row === 'object') {
-                    statuses[String(row.user_id)] = String(row.active);
-                    return String(row.user_id);
+                if (typeof row === 'object' && row !== null && selectAllKey) {
+                    const id = String(row[selectAllKey]);
+                    if (selectAllStatusKey) statuses[id] = String(row[selectAllStatusKey]);
+                    return id;
                 }
                 return String(row);
             });

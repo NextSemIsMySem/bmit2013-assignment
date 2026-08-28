@@ -27,6 +27,7 @@ $discountType = req('discount_type') === 'fixed' ? 'fixed' : 'percentage';
 $discountPercentageMin = req('discount_percentage_min', '');
 $discountValueMin = req('discount_value_min', '');
 $minSpendRequired = req('min_spend_toggle') === 'on';
+$minSpendValue = req('min_spend_value', '');
 
 $conditions = ['v.name LIKE ?', "v.status != 'expired'"];
 $params = ["%$name%"];
@@ -50,7 +51,12 @@ if ($discountFilterOn) {
 }
 
 if ($minSpendRequired) {
-    $conditions[] = 'v.minimum_spend > 0';
+    if ($minSpendValue !== '' && is_numeric($minSpendValue)) {
+        $conditions[] = 'v.minimum_spend >= ?';
+        $params[] = (float) $minSpendValue;
+    } else {
+        $conditions[] = 'v.minimum_spend > 0';
+    }
 }
 
 $sql = "SELECT v.*,
@@ -105,6 +111,9 @@ $adminFilter = [
             'type' => 'toggle',
             'name' => 'min_spend_toggle',
             'label' => 'Require a minimum spend',
+            'fields' => [
+                ['name' => 'min_spend_value', 'label' => 'Minimum Spend (RM)', 'type' => 'number'],
+            ],
         ],
     ],
 ];
