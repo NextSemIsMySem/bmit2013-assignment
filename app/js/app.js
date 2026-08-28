@@ -39,28 +39,8 @@ const adminFilterClose = document.getElementById('admin-table-filter-close');
 adminFilterBtn?.addEventListener('click', () => adminFilterDialog.showModal());
 adminFilterClose?.addEventListener('click', () => adminFilterDialog.close());
 
-document.querySelector('.admin-table-filter-form')?.addEventListener('submit', event => {
-    let valid = true;
-
-    document.querySelectorAll('[data-admin-filter-range]').forEach(range => {
-        const minInput = range.querySelector('[data-range-min]');
-        const maxInput = range.querySelector('[data-range-max]');
-        const hasBothValues = minInput.value !== '' && maxInput.value !== '';
-        const isValid = !hasBothValues || Number(minInput.value) <= Number(maxInput.value);
-
-        maxInput.setCustomValidity(isValid ? '' : 'Maximum must be greater than or equal to minimum.');
-        valid = valid && isValid;
-    });
-
-    if (!valid) {
-        event.preventDefault();
-        event.currentTarget.reportValidity();
-    }
-});
-
 document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     const storageKey = bar.dataset.storageKey;
-    const statusStorageKey = `${storageKey}-statuses`;
     const selectAllUrl = bar.dataset.selectAllUrl;
 
     // Selection should persist across pagination of the SAME table (same
@@ -79,6 +59,7 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     sessionStorage.setItem('bulk-select-last-key', storageKey);
     const countEl = bar.querySelector('[data-bulk-count]');
     const selectPageBtn = bar.querySelector('[data-bulk-select-page]');
+    const selectAllBtn = bar.querySelector('[data-bulk-select-all]');
     const actionButtons = bar.querySelectorAll('[data-bulk-action]');
     const cancelBtn = bar.querySelector('[data-bulk-cancel]');
     const headerCheckbox = document.querySelector('[data-bulk-select-page-checkbox]');
@@ -103,7 +84,6 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
         });
 
         localStorage.removeItem(storageKey);
-        localStorage.removeItem(statusStorageKey);
         document.body.appendChild(form);
         form.submit();
     };
@@ -116,26 +96,13 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
         }
     };
 
-    const getSelectedStatuses = () => {
-        try {
-            return JSON.parse(localStorage.getItem(statusStorageKey) || '{}');
-        } catch {
-            return {};
-        }
-    };
-
     const render = () => {
         const selected = getSelected();
-        const statuses = getSelectedStatuses();
         countEl.textContent = `${selected.size} selected`;
 
         rowCheckboxes().forEach(checkbox => {
             checkbox.checked = selected.has(checkbox.value);
-            if (checkbox.checked && checkbox.dataset.bulkStatus !== undefined) {
-                statuses[checkbox.value] = checkbox.dataset.bulkStatus;
-            }
         });
-        localStorage.setItem(statusStorageKey, JSON.stringify(statuses));
 
         if (headerCheckbox) {
             const pageIds = rowCheckboxes().map(checkbox => checkbox.value);
@@ -147,7 +114,9 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
 
             const countWhen = button.dataset.bulkCountWhen;
             if (countWhen !== undefined) {
-                const count = Array.from(selected).filter(id => statuses[id] === countWhen).length;
+                const count = rowCheckboxes().filter(
+                    checkbox => selected.has(checkbox.value) && checkbox.dataset.bulkStatus === countWhen
+                ).length;
                 const labelText = button.querySelector('[data-bulk-label-text]');
                 if (labelText) labelText.textContent = `${button.dataset.bulkLabel} (${count})`;
             }
@@ -157,12 +126,7 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     };
 
     const setSelected = selected => {
-        const statuses = getSelectedStatuses();
-        Object.keys(statuses).forEach(id => {
-            if (!selected.has(id)) delete statuses[id];
-        });
         localStorage.setItem(storageKey, JSON.stringify(Array.from(selected)));
-        localStorage.setItem(statusStorageKey, JSON.stringify(statuses));
         render();
     };
 
@@ -176,49 +140,36 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
         });
     });
 
-    headerCheckbox?.addEventListener('change', async () => {
-        if (!headerCheckbox.checked) {
-            setSelected(new Set());
-            return;
-        }
-
-        if (!selectAllUrl) {
-            const selected = getSelected();
-            rowCheckboxes().forEach(checkbox => selected.add(checkbox.value));
-            setSelected(selected);
-            return;
-        }
-
-        headerCheckbox.disabled = true;
-        try {
-            const response = await fetch(selectAllUrl + window.location.search);
-            const rows = await response.json();
-            const statuses = {};
-            const ids = rows.map(row => {
-                if (typeof row === 'object') {
-                    statuses[String(row.user_id)] = String(row.active);
-                    return String(row.user_id);
-                }
-                return String(row);
-            });
-            localStorage.setItem(statusStorageKey, JSON.stringify(statuses));
-            setSelected(new Set(ids));
-        } catch (error) {
-            headerCheckbox.checked = false;
-            showInfo('Unable to select all — please try again.');
-        } finally {
-            headerCheckbox.disabled = false;
-        }
+    headerCheckbox?.addEventListener('change', () => {
+        const selected = getSelected();
+        rowCheckboxes().forEach(checkbox => {
+            headerCheckbox.checked ? selected.add(checkbox.value) : selected.delete(checkbox.value);
+        });
+        setSelected(selected);
     });
 
     selectPageBtn?.addEventListener('click', () => {
-        const pageCheckboxes = rowCheckboxes();
-        const statuses = {};
-        pageCheckboxes.forEach(checkbox => {
-            statuses[checkbox.value] = checkbox.dataset.bulkStatus;
-        });
-        localStorage.setItem(statusStorageKey, JSON.stringify(statuses));
-        setSelected(new Set(pageCheckboxes.map(checkbox => checkbox.value)));
+        const selected = getSelected();
+        rowCheckboxes().forEach(checkbox => selected.add(checkbox.value));
+        setSelected(selected);
+    });
+
+    selectAllBtn?.addEventListener('click', async () => {
+        if (!selectAllUrl) {
+            return;
+        }
+
+        selectAllBtn.disabled = true;
+
+        try {
+            const response = await fetch(selectAllUrl + window.location.search);
+            const ids = await response.json();
+            setSelected(new Set(ids.map(String)));
+        } catch (error) {
+            showInfo('Unable to select all — please try again.');
+        } finally {
+            selectAllBtn.disabled = false;
+        }
     });
 
     cancelBtn?.addEventListener('click', () => {

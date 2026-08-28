@@ -27,18 +27,6 @@ function apply_voucher_expiry($_db) {
 // Configurations with at least one 'used' code are kept indefinitely — they
 // carry real order history and stay available to delete manually instead.
 function cleanup_stale_expired_vouchers($_db) {
-    // Codes are pruned first, independently of their configuration's fate:
-    // a config kept alive by one used code can still have other codes that
-    // were never used and never will be, so those get swept too instead of
-    // sitting there forever just because a sibling code has order history.
-    $_db->exec(
-        "DELETE v FROM voucher v
-         JOIN voucher_configuration vc ON vc.voucher_id = v.voucher_id
-         WHERE vc.status = 'expired'
-           AND vc.end_date < NOW() - INTERVAL 3 DAY
-           AND v.status != 'used'"
-    );
-
     $_db->exec(
         "DELETE FROM voucher_configuration
          WHERE status = 'expired'

@@ -12,16 +12,8 @@ $stmt->execute();
 $products = $stmt->fetchAll();
 
 $_title = 'Out of Stock Products';
-$_hideHeading = true;
 include '../../_head.php';
-?>
 
-<div class="admin-page-header">
-    <h1>Out of Stock Products</h1>
-    <a class="btn-dark" href="products.php">&larr; Back to Products</a>
-</div>
-
-<?php
 if ($products):
     $adminColumns = [
         'product_name' => 'Product Name',
@@ -30,6 +22,9 @@ if ($products):
     ];
     $adminRows = $products;
     $adminPaginate = true;
+    $adminToolbarButtons = [
+        ['label' => '← Back to Products', 'url' => 'products.php', 'class' => 'btn-dark'],
+    ];
     $adminActions = [];
     $adminActionsWidth = 220;
     $adminActionsRenderer = function ($row) {

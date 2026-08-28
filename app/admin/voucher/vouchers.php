@@ -55,7 +55,6 @@ if ($minSpendRequired) {
 
 $sql = "SELECT v.*,
                (v.status = 'active' AND v.start_date > NOW()) AS is_pending,
-               (v.start_date > NOW()) AS is_not_started,
                EXISTS (SELECT 1 FROM voucher vv WHERE vv.voucher_id = v.voucher_id AND vv.status = 'used') AS has_used_code
         FROM voucher_configuration v
         WHERE " . implode(' AND ', $conditions) . "
@@ -144,10 +143,9 @@ $adminActions = [
         'url'     => fn($row) => 'voucher-delete.php?id=' . $row->voucher_id,
         'confirm' => 'Delete this voucher?',
         // Deleting is permanent and cascades to every code under it, so it's
-        // only offered once expired, or before its start date (either way no
-        // code under it could possibly have been used) — matches the rule
-        // voucher-delete.php enforces.
-        'hidden'  => fn($row) => ($row->status !== 'expired' && !$row->is_not_started) || $row->has_used_code,
+        // only offered once the voucher is expired and none of its codes
+        // were ever used — matches the rule voucher-delete.php enforces.
+        'hidden'  => fn($row) => $row->status !== 'expired' || $row->has_used_code,
     ],
 ];
 $adminBulkSelect = [

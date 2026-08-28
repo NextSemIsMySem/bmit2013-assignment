@@ -87,9 +87,12 @@ $adminRows = $products;
 $adminPaginate = true;
 $adminFilter = [
     'fields' => [
-        ['type' => 'range', 'label' => 'Price (RM)', 'min_name' => 'price_min', 'max_name' => 'price_max'],
-        ['type' => 'range', 'label' => 'Weight (kg)', 'min_name' => 'weight_min', 'max_name' => 'weight_max'],
-        ['type' => 'range', 'label' => 'Stock', 'min_name' => 'stock_min', 'max_name' => 'stock_max'],
+        ['name' => 'price_min', 'label' => 'Min Price (RM)', 'type' => 'number'],
+        ['name' => 'price_max', 'label' => 'Max Price (RM)', 'type' => 'number'],
+        ['name' => 'weight_min', 'label' => 'Min Weight (kg)', 'type' => 'number'],
+        ['name' => 'weight_max', 'label' => 'Max Weight (kg)', 'type' => 'number'],
+        ['name' => 'stock_min', 'label' => 'Min Stock', 'type' => 'number'],
+        ['name' => 'stock_max', 'label' => 'Max Stock', 'type' => 'number'],
         [
             'name' => 'availability',
             'label' => 'Availability',

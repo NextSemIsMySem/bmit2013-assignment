@@ -21,11 +21,6 @@ if ($voucher->status === 'expired') {
     redirect('voucher-archived-detail.php?id=' . $id);
 }
 
-// A code can only reach 'used' once its configuration's window has opened,
-// so a not-yet-started configuration's codes are always safe to remove
-// outright — this gates the Remove button on existing rows below.
-$notStarted = strtotime($voucher->start_date) > time();
-
 $codesStmt = $_db->prepare('SELECT id, code, status FROM voucher WHERE voucher_id = ? ORDER BY id');
 $codesStmt->execute([$id]);
 $existingCodes = $codesStmt->fetchAll();
@@ -127,16 +122,6 @@ if (is_post()) {
                 continue;
             }
 
-            // Mark this existing row as accounted for as soon as we know it's
-            // a real, editable row that was actually submitted — regardless
-            // of what happens with its code below. Otherwise a submitted row
-            // with a blank code (skipped further down, left unchanged) would
-            // never get unset here, and the not-yet-started deletion pass
-            // below would wrongly treat it as removed and delete it.
-            if (!$isNew) {
-                unset($currentStatuses[$rowId]);
-            }
-
             $status = ($rowStatuses[$index] ?? 'active') === 'disabled' ? 'disabled' : 'active';
 
             $candidate = strtoupper(trim((string) ($rowCodes[$index] ?? '')));
@@ -159,20 +144,6 @@ if (is_post()) {
                 $insertCode->execute([$id, $candidate, $status]);
             } else {
                 $updateCode->execute([$candidate, $status, $rowId, $id]);
-            }
-        }
-
-        // Whatever's left in $currentStatuses is an existing code the popup
-        // no longer submitted — i.e. the admin clicked Remove on it. Only
-        // act on that while the configuration hasn't started yet; the
-        // Remove button itself is only rendered in that case, but this
-        // re-checks server-side rather than trusting the submitted rows.
-        if ($notStarted && $currentStatuses) {
-            $removableIds = array_keys(array_filter($currentStatuses, fn($status) => $status !== 'used'));
-            if ($removableIds) {
-                $placeholders = implode(',', array_fill(0, count($removableIds), '?'));
-                $deleteCode = $_db->prepare("DELETE FROM voucher WHERE voucher_id = ? AND id IN ($placeholders)");
-                $deleteCode->execute([$id, ...$removableIds]);
             }
         }
 
@@ -206,7 +177,7 @@ include '../../_head.php';
 
     <dialog id="individual-voucher-dialog" aria-labelledby="individual-voucher-title">
         <p id="individual-voucher-title">Individual Voucher Configuration</p>
-        <div class="individual-voucher-list<?= $voucher->status === 'disabled' ? ' individual-voucher-list--config-disabled' : '' ?>" id="individual-voucher-list">
+        <div class="individual-voucher-list" id="individual-voucher-list">
             <?php foreach ($existingCodes as $existingCode): ?>
                 <?php $locked = $existingCode->status === 'used'; ?>
                 <div class="individual-voucher-row" data-locked="<?= $locked ? '1' : '0' ?>">
@@ -219,9 +190,6 @@ include '../../_head.php';
                             <button type="button" class="individual-voucher-row__toggle" title="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
                                 <img src="/images/<?= $existingCode->status === 'active' ? 'activate.png' : 'disable.png' ?>" alt="<?= $existingCode->status === 'active' ? 'Disable' : 'Activate' ?>">
                             </button>
-                            <?php if ($notStarted): ?>
-                                <button type="button" class="individual-voucher-row__remove" aria-label="Remove this voucher" title="Remove this voucher">&times;</button>
-                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                     <input type="hidden" name="row_id[]" value="<?= encode($existingCode->id) ?>">
@@ -448,16 +416,6 @@ include '../../_head.php';
         });
 
         remove?.addEventListener('click', () => {
-            // A brand-new row is just a discarded draft — nothing saved yet,
-            // so no prompt needed. An existing row is a real, already-saved
-            // code that will be permanently deleted once Save is clicked, so
-            // it gets the same confirm every other delete action in this app
-            // uses.
-            const isExisting = !!row.querySelector('[name="row_id[]"]')?.value;
-            if (isExisting && !confirm('Remove this voucher code? It will be permanently deleted once you save.')) {
-                return;
-            }
-
             row.remove();
             updateAddButtonState();
         });

@@ -95,13 +95,7 @@ if (!$addresses) {
     redirect('/user/address-form.php?return=' . urlencode($returnUrl));
 }
 
-$voucher = null;
-$discountAmount = 0;
-
 if (is_post()) {
-    $applyVoucherOnly = req('apply_voucher') === '1';
-    $clearVoucher = req('clear_voucher') === '1';
-
     $addressId = filter_var(req('address_id'), FILTER_VALIDATE_INT);
     $selectedAddress = null;
     foreach ($addresses as $candidate) {
@@ -112,11 +106,18 @@ if (is_post()) {
     }
 
     $paymentMethod = req('payment_method');
-    // Clearing ignores whatever the (readonly) field still holds and blanks
-    // the field on re-render too, rather than just skipping the lookup below
-    // and leaving the old code sitting there uneditable.
-    $voucherCode = $clearVoucher ? '' : req('voucher_code');
-    $_REQUEST['voucher_code'] = $voucherCode;
+    $voucherCode = req('voucher_code');
+
+    if (!$selectedAddress) {
+        $_err['address_id'] = 'Please select a shipping address.';
+    }
+
+    if (!array_key_exists($paymentMethod, $paymentMethods)) {
+        $_err['payment_method'] = 'Please select a payment method.';
+    }
+
+    $voucher = null;
+    $discountAmount = 0;
 
     if ($voucherCode !== '') {
         $voucherStmt = $_db->prepare(
@@ -140,80 +141,64 @@ if (is_post()) {
         }
     }
 
-    if (!$applyVoucherOnly && !$clearVoucher) {
-        if (!$selectedAddress) {
-            $_err['address_id'] = 'Please select a shipping address.';
-        }
+    if (!$_err) {
+        $addressFields = [
+            'street' => $selectedAddress->street,
+            'city' => $selectedAddress->city,
+            'state' => $selectedAddress->state,
+            'postal_code' => $selectedAddress->postal_code,
+            'country' => $selectedAddress->country,
+        ];
 
-        if (!array_key_exists($paymentMethod, $paymentMethods)) {
-            $_err['payment_method'] = 'Please select a payment method.';
+        try {
+            // Both payment methods create the order immediately (Shopee-style
+            // for card — the order exists in a 'pending' state before the
+            // buyer has actually paid; COD just never leaves 'pending' until
+            // the courier collects on delivery, or an admin marks it later).
+            $orderId = create_order_from_cart(
+                $_db,
+                $_user,
+                $items,
+                $addressFields,
+                $paymentMethod,
+                $voucher,
+                $discountAmount,
+                $subtotal,
+                $shippingFee,
+                'pending',
+                null,
+                $mode === 'buy_now' ? [] : null
+            );
+        } catch (RuntimeException $e) {
+            $_err['stock'] = $e->getMessage();
         }
 
         if (!$_err) {
-            $addressFields = [
-                'street' => $selectedAddress->street,
-                'city' => $selectedAddress->city,
-                'state' => $selectedAddress->state,
-                'postal_code' => $selectedAddress->postal_code,
-                'country' => $selectedAddress->country,
-            ];
-
-            try {
-                // Both payment methods create the order immediately (Shopee-style
-                // for card — the order exists in a 'pending' state before the
-                // buyer has actually paid; COD just never leaves 'pending' until
-                // the courier collects on delivery, or an admin marks it later).
-                $orderId = create_order_from_cart(
-                    $_db,
-                    $_user,
-                    $items,
-                    $addressFields,
-                    $paymentMethod,
-                    $voucher,
-                    $discountAmount,
-                    $subtotal,
-                    $shippingFee,
-                    'pending',
-                    null,
-                    $mode === 'buy_now' ? [] : null
-                );
-            } catch (RuntimeException $e) {
-                $_err['stock'] = $e->getMessage();
+            if ($paymentMethod === 'cod') {
+                temp('info', 'Order placed successfully.');
+                redirect('/cart/order-confirmation.php?id=' . $orderId);
             }
 
-            if (!$_err) {
-                if ($paymentMethod === 'cod') {
-                    temp('info', 'Order placed successfully.');
-                    redirect('/cart/order-confirmation.php?id=' . $orderId);
-                }
+            // 'card' — the order is already saved; now send the buyer to
+            // Stripe to actually pay for it. stripe-return.php marks it paid
+            // once Stripe confirms.
+            $total = $subtotal - $discountAmount + $shippingFee;
+            $session = start_stripe_payment_for_order($orderId, $total, $_user->email);
 
-                // 'card' — the order is already saved; now send the buyer to
-                // Stripe to actually pay for it. stripe-return.php marks it paid
-                // once Stripe confirms.
-                $total = $subtotal - $discountAmount + $shippingFee;
-                $session = start_stripe_payment_for_order($orderId, $total, $_user->email);
-
-                if ($session['code'] === 200 && !empty($session['body']->url)) {
-                    $refStmt = $_db->prepare('UPDATE payment SET transaction_reference = ? WHERE order_id = ?');
-                    $refStmt->execute([$session['body']->id, $orderId]);
-                    redirect($session['body']->url);
-                }
-
-                error_log('Stripe checkout session error: ' . json_encode($session['body'] ?? null));
-                temp('info', 'Order placed, but we could not start the payment page. You can try paying again from your order.');
-                redirect('/orders/detail.php?id=' . $orderId);
+            if ($session['code'] === 200 && !empty($session['body']->url)) {
+                $refStmt = $_db->prepare('UPDATE payment SET transaction_reference = ? WHERE order_id = ?');
+                $refStmt->execute([$session['body']->id, $orderId]);
+                redirect($session['body']->url);
             }
+
+            error_log('Stripe checkout session error: ' . json_encode($session['body'] ?? null));
+            temp('info', 'Order placed, but we could not start the payment page. You can try paying again from your order.');
+            redirect('/orders/detail.php?id=' . $orderId);
         }
     }
 }
 
 $selectedAddressId = filter_var(req('address_id'), FILTER_VALIDATE_INT) ?: (int) $addresses[0]->address_id;
-
-// Once a code has actually been validated and its discount applied, the
-// field locks in place rather than staying editable — matches place-order's
-// error-recovery path too: e.g. a missing address bounces back here with the
-// voucher still applied, so it shouldn't invite retyping a code that already worked.
-$voucherApplied = $voucher && !isset($_err['voucher_code']);
 
 $_title = 'Checkout';
 include '../_head.php';
@@ -254,22 +239,7 @@ include '../_head.php';
         <h2>Payment</h2>
         <div class="form checkout-form">
             <?php html_select('payment_method', 'Payment Method', $paymentMethods); ?>
-
-            <label for="voucher_code">Voucher Code (optional)</label>
-            <div class="voucher-code-field">
-                <input
-                    type="text"
-                    id="voucher_code"
-                    name="voucher_code"
-                    value="<?= encode(req('voucher_code')) ?>"
-                    <?= $voucherApplied ? 'readonly' : '' ?>
-                >
-                <button type="submit" name="apply_voucher" value="1" class="btn-blue" <?= $voucherApplied ? 'disabled' : '' ?>>Apply</button>
-                <?php if ($voucherApplied): ?>
-                    <button type="submit" name="clear_voucher" value="1" class="btn-dark">Clear</button>
-                <?php endif; ?>
-            </div>
-            <?= err('voucher_code') ?>
+            <?php html_text('voucher_code', 'Voucher Code (optional)'); ?>
         </div>
     </section>
 
@@ -295,11 +265,8 @@ include '../_head.php';
         </table>
 
         <p class="checkout-totals-line">Subtotal: RM <?= encode(number_format($subtotal, 2)) ?></p>
-        <?php if ($discountAmount > 0): ?>
-            <p class="checkout-totals-line">Discount: -RM <?= encode(number_format($discountAmount, 2)) ?></p>
-        <?php endif; ?>
         <p class="checkout-totals-line">Shipping: RM <?= encode(number_format($shippingFee, 2)) ?></p>
-        <p class="checkout-totals-line checkout-totals-grand">Total: RM <?= encode(number_format($subtotal - $discountAmount + $shippingFee, 2)) ?></p>
+        <p class="checkout-totals-line checkout-totals-note">Voucher discount (if any) is applied when you place the order.</p>
 
         <?= err('stock') ?>
 

@@ -195,24 +195,6 @@ a.btn-dark {
     margin-top: 16px;
 }
 
-.admin-filter-range {
-    border: 0;
-    padding: 0;
-    margin: 0;
-}
-
-.admin-filter-range legend {
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.admin-filter-range__inputs {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
-}
-
 #admin-table-filter-dialog::backdrop {
     background: rgba(0, 0, 0, 0.35);
 }
@@ -393,18 +375,6 @@ main h1 {
     margin-top: 0;
     color: #1a1a2e;
     font-size: 24px;
-}
-
-.admin-page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.admin-page-header h1 {
-    margin: 0;
 }
 
 .section-title {
@@ -1612,15 +1582,9 @@ label.upload img {
     transition: background 0.2s ease, color 0.2s ease;
 }
 
-.btn-blue:hover:not(:disabled) {
+.btn-blue:hover {
     background: #2563eb;
     color: #ffffff;
-}
-
-.btn-blue:disabled {
-    border-color: #a0a8c0;
-    color: #a0a8c0;
-    cursor: not-allowed;
 }
 
 .btn-gray {
@@ -1664,20 +1628,6 @@ label.upload img {
     display: flex;
     flex-direction: column;
     gap: 8px;
-}
-
-/* The configuration itself is disabled, so a code's own active/disable
-   toggle icon doesn't mean it's actually usable right now — this is purely
-   visual, nothing here reflects a database change. */
-.individual-voucher-list--config-disabled .individual-voucher-row__toggle {
-    /* contrast(0), not grayscale(1) — grayscale keeps each icon's original
-       luminance, so a green and a red icon still end up as two visibly
-       different shades of gray. Flattening contrast to 0 collapses both to
-       the exact same flat gray. */
-    filter: contrast(0);
-    opacity: 0.6;
-    pointer-events: none;
-    cursor: not-allowed;
 }
 
 .individual-voucher-row {
