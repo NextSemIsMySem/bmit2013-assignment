@@ -72,6 +72,29 @@ $adminActions = [
         'class'   => fn($row) => $row->active ? '' : 'admin-action-button--inactive',
     ],
 ];
+$adminBulkSelect = [
+    'key'          => 'user_id',
+    'storageKey'   => 'bulk-select-administrators',
+    'selectAllUrl' => 'admin-ids.php',
+    'statusKey'    => 'active',
+    'actions'      => [
+        [
+            'label'     => 'Disable',
+            'icon'      => 'disable.png',
+            'url'       => 'admin-bulk-disable.php',
+            'confirm'   => 'Disable the selected administrators?',
+            'countWhen' => 1,
+        ],
+        [
+            'label'     => 'Activate',
+            'icon'      => 'activate.png',
+            'url'       => 'admin-bulk-activate.php',
+            'confirm'   => 'Activate the selected administrators?',
+            'class'     => 'admin-bulk-bar__action--green',
+            'countWhen' => 0,
+        ],
+    ],
+];
 include '../admin_table.php';
 
 include '../../_foot.php';
