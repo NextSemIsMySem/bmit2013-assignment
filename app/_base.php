@@ -1,4 +1,9 @@
 <?php
+session_set_cookie_params([
+    'httponly' => true,
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'samesite' => 'Lax',
+]);
 session_start();
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
@@ -30,6 +35,25 @@ function is_post() {
 function redirect($url) {
     header('Location: ' . $url);
     exit;
+}
+
+function csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field() {
+    return '<input type="hidden" name="csrf_token" value="' . encode(csrf_token()) . '">';
+}
+
+function verify_csrf() {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!is_string($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        http_response_code(403);
+        exit('Invalid security token. Please reload the page and try again.');
+    }
 }
 
 // ============================================================================
@@ -68,17 +92,29 @@ function html_required_star() {
     return ' <span class="required-star">*</span>';
 }
 
-function html_text($name, $label, $type = 'text', $required = false) {
+function html_text($name, $label, $type = 'text', $required = false, $pattern = '', $policy = '') {
     $value = encode(req($name));
     echo '<label for="' . $name . '">' . encode($label) . ($required ? html_required_star() : '') . '</label>';
-    echo '<input type="' . $type . '" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
+    $attributes = $pattern !== '' ? ' pattern="' . encode($pattern) . '"' : '';
+    $attributes .= $policy !== '' ? ' data-character-policy="' . encode($policy) . '"' : '';
+    echo '<input type="' . $type . '" id="' . $name . '" name="' . $name . '" value="' . $value . '"' . $attributes . '>';
+    echo err($name);
+}
+
+function html_restricted_text($name, $label, $pattern, $policy, $maxlength = '') {
+    $value = encode(req($name));
+    $max = $maxlength !== '' ? ' maxlength="' . (int) $maxlength . '"' : '';
+    echo '<label for="' . $name . '">' . encode($label) . '</label>';
+    echo '<input type="text" id="' . $name . '" name="' . $name . '" value="' . $value . '" pattern="' . encode($pattern) . '" data-character-policy="' . encode($policy) . '"' . $max . '>';
     echo err($name);
 }
 
 function html_password($name, $attr = '') {
-    $value = encode(req($name));
     echo '<label for="' . $name . '">' . encode($attr !== '' ? $attr : 'Password') . '</label>';
-    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
+    echo '<div class="password-input-wrap">';
+    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="" autocomplete="' . ($name === 'password' ? 'current-password' : 'new-password') . '" pattern="[!-~]+" data-character-policy="password">';
+    echo '<button type="button" class="password-toggle" data-password-toggle="' . $name . '" aria-label="Show password" aria-pressed="false"><span class="password-toggle__show" aria-hidden="true">&#128065;</span><span class="password-toggle__hide" aria-hidden="true">&#128065;</span></button>';
+    echo '</div>';
     echo err($name);
 }
 
@@ -180,6 +216,7 @@ function is_email($v) {
 function password_error($password, $label = 'Password') {
     if ($password === '')                                   return "$label is required.";
     if (strlen($password) < 8 || strlen($password) > 50)     return "$label must be between 8-50 characters.";
+    if (!preg_match('/^[\x21-\x7E]+$/', $password))         return "$label may only contain English letters, numbers and keyboard symbols.";
     $ok = preg_match('/[a-z]/', $password) && preg_match('/[A-Z]/', $password)
        && preg_match('/[0-9]/', $password) && preg_match('/[^a-zA-Z0-9]/', $password);
     if (!$ok) return "$label must include upper/lowercase letters, a number and a symbol.";
@@ -191,10 +228,38 @@ function password_error($password, $label = 'Password') {
 // ============================================================================
 
 // Global user object (the logged-in user's row, or null)
-$_user = $_SESSION['user'] ?? null;
+$_user = null;
+if (!empty($_SESSION['user_id']) || !empty($_SESSION['user']->user_id)) {
+    $userId = $_SESSION['user_id'] ?? $_SESSION['user']->user_id;
+    $stm = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
+    $stm->execute([$userId]);
+    $_user = $stm->fetch() ?: null;
+    if (!$_user || !$_user->active || (!empty($_SESSION['password_hash']) && !hash_equals($_SESSION['password_hash'], $_user->password))) {
+        unset($_SESSION['user_id'], $_SESSION['user']);
+        $_user = null;
+    } else {
+        $_SESSION['user_id'] = $_user->user_id;
+        $_SESSION['password_hash'] = $_user->password;
+        unset($_SESSION['user']);
+    }
+}
 
-function login($user, $url = '/') { $_SESSION['user'] = $user; redirect($url); }
-function logout($url = '/')       { unset($_SESSION['user']); redirect($url); }
+function login($user, $url = '/') {
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = $user->user_id;
+    $_SESSION['password_hash'] = $user->password;
+    unset($_SESSION['user']);
+    redirect($url);
+}
+function logout($url = '/') {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+    redirect($url);
+}
 
 // True for any admin-level account. Use this instead of comparing role to
 // 'admin' directly, so a superadmin is never mistaken for a member.

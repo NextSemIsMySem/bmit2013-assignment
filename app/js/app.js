@@ -4,6 +4,32 @@
 
 const toggleFields = document.querySelectorAll('[data-toggle-target]');
 
+const characterPolicies = {
+    username: /[^A-Za-z0-9_]/g,
+    'display-name': /[^A-Za-z0-9 .,'-]/g,
+    identifier: /[^\x21-\x7E]/g,
+    email: /[^\x21-\x7E]/g,
+    password: /[^\x21-\x7E]/g,
+};
+
+document.querySelectorAll('[data-character-policy]').forEach(field => {
+    field.addEventListener('input', () => {
+        const pattern = characterPolicies[field.dataset.characterPolicy];
+        if (pattern) field.value = field.value.replace(pattern, '');
+    });
+});
+
+document.querySelectorAll('[data-password-toggle]').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+        const password = document.getElementById(toggle.dataset.passwordToggle);
+        const isVisible = password.type === 'text';
+        password.type = isVisible ? 'password' : 'text';
+        toggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+        toggle.setAttribute('aria-pressed', String(!isVisible));
+        toggle.classList.toggle('is-visible', !isVisible);
+    });
+});
+
 const setToggleTarget = (selector, visible) => {
     if (!selector) {
         return;

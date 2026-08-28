@@ -34,7 +34,10 @@
                 <div class="profile-menu" id="profile-menu" role="menu" aria-hidden="true">
                     <a role="menuitem" href="/user/settings.php">Settings</a>
                     <a role="menuitem" href="/user/reset.php">Forgot Password</a>
-                    <a role="menuitem" href="/logout.php">Logout</a>
+                    <form method="post" action="/logout.php">
+                        <?= csrf_field() ?>
+                        <button type="submit" role="menuitem">Logout</button>
+                    </form>
                 </div>
             <?php else: ?>
                 <div class="guest-actions" aria-label="Account actions">
@@ -161,7 +164,10 @@
         <?php endif; ?>
         <?php endif; ?>
         <?php if ($_user && !is_admin()): ?>
-        <a href="/logout.php">Logout</a>
+        <form method="post" action="/logout.php">
+            <?= csrf_field() ?>
+            <button type="submit">Logout</button>
+        </form>
         <?php endif; ?>
     </nav>
 

@@ -17,6 +17,7 @@ if (is_get()) {
 }
 
 if (is_post()) {
+    verify_csrf();
     $username = req('username');
     $name = req('name');
     $email = req('email');
@@ -39,6 +40,8 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
+    } elseif ($email !== $_user->email) {
+        $_err['email'] = 'Email changes require verification and are not available here.';
     } elseif (strlen($email) > 255) {
         $_err['email'] = 'Email must be at most 255 characters.';
     } elseif (!is_email($email)) {
@@ -87,6 +90,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <?php html_text('username', 'Username'); ?>
     <?php html_text('name', 'Display Name'); ?>
     <?php html_text('email', 'Email', 'email'); ?>

@@ -3,34 +3,40 @@ require '../_base.php';
 auth();
 
 if (is_post()) {
+    verify_csrf();
     $password = req('password');
     $new_password = req('new_password');
     $confirm = req('confirm');
-    $newPasswordFailed = false;
+    $passwordFieldsInvalid = false;
 
     if ($password === '') {
         $_err['password'] = 'Password is required.';
+        $passwordFieldsInvalid = true;
     } else {
         $stm = $_db->prepare('SELECT COUNT(*) FROM user WHERE password = SHA1(?) AND user_id = ?');
         $stm->execute([$password, $_user->user_id]);
 
         if ($stm->fetchColumn() == 0) {
             $_err['password'] = 'Incorrect current password.';
+            $passwordFieldsInvalid = true;
         }
     }
 
     if ($pwError = password_error($new_password, 'New password')) {
         $_err['new_password'] = $pwError;
-        $newPasswordFailed = true;
+        $passwordFieldsInvalid = true;
     }
 
     if ($confirm === '') {
         $_err['confirm'] = 'Please confirm your new password.';
+        $passwordFieldsInvalid = true;
     } elseif ($confirm !== $new_password) {
         $_err['confirm'] = 'Does not match with new password.';
+        $passwordFieldsInvalid = true;
     }
 
-    if ($newPasswordFailed) {
+    if ($passwordFieldsInvalid) {
+        $_REQUEST['password'] = '';
         $_REQUEST['new_password'] = '';
         $_REQUEST['confirm'] = '';
     }
@@ -38,9 +44,10 @@ if (is_post()) {
     if (!$_err) {
         $stm = $_db->prepare('UPDATE user SET password = SHA1(?) WHERE user_id = ?');
         $stm->execute([$new_password, $_user->user_id]);
+        $_SESSION['password_hash'] = sha1($new_password);
 
         temp('info', 'Password updated.');
-        redirect('/user/profile.php');
+        redirect('/');
     }
 }
 
@@ -52,6 +59,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_password('password', 'Current Password'); ?>
     <?php html_password('new_password', 'New Password'); ?>
 

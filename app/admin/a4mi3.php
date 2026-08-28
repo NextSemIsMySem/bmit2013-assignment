@@ -11,6 +11,7 @@ if ($_user) {
 }
 
 if (is_post()) {
+    verify_csrf();
     $identifier = req('identifier');
     $password = req('password');
 
@@ -21,7 +22,6 @@ if (is_post()) {
     if ($password === '') {
         $_err['password'] = 'Password is required.';
     }
-
     if (!$_err) {
         // A valid email is always treated as an email; every other identifier is a username.
         // Admins only — a member with correct credentials falls through to the generic
@@ -49,6 +49,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_text('identifier', 'Email or Username'); ?>
     <?php html_password('password', 'Password'); ?>
     <section class="buttons">
