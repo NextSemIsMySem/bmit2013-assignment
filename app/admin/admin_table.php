@@ -58,11 +58,12 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   ['type_name' => 'query param for which side is active (\'fixed\' or
  *   default \'percentage\')', 'percentage_name'/'amount_name' => query
  *   params for each side's input, 'percentage_label'/'amount_label' =>
- *   optional input labels].
+ *   optional input labels]. Type 'range' renders paired minimum/maximum
+ *   number inputs and validates that the minimum does not exceed the maximum.
  * - $adminBulkSelect: ['key' => 'row id property', 'storageKey' => unique
  *   localStorage key for this table, 'selectAllUrl' => optional GET endpoint
  *   returning a JSON array of every id matching the current search/filter
- *   (ignoring pagination) — omit to skip the "select all N matching" option,
+ *   (ignoring pagination), used by the header checkbox to select the full list,
  *   'statusKey' => optional row property (e.g. 'availability') stamped onto
  *   each row checkbox as data-bulk-status, used for the live count below,
  *   'actions' => [['label' => 'Delete', 'icon' => optional /images/ filename,
@@ -123,6 +124,9 @@ if ($adminFilter) {
         if (($field['type'] ?? '') === 'discount') {
             return [$field['type_name'], $field['percentage_name'], $field['amount_name']];
         }
+        if (($field['type'] ?? '') === 'range') {
+            return [$field['min_name'], $field['max_name']];
+        }
         return [$field['name']];
     };
     $adminFilterAllNames = array_merge(...array_map($adminFilterFieldNames, $adminFilter['fields']) ?: [[]]);
@@ -175,6 +179,26 @@ if ($adminFilter) {
                 <label for="admin-filter-<?= encode($amountName) ?>"><?= encode($field['amount_label'] ?? 'Min Discount Amount (RM)') ?></label>
                 <input type="number" id="admin-filter-<?= encode($amountName) ?>" name="<?= encode($amountName) ?>" value="<?= encode(req($amountName, '')) ?>">
             </div>
+            <?php
+            return;
+        }
+
+        if ($fieldType === 'range') {
+            $minName = $field['min_name'];
+            $maxName = $field['max_name'];
+            $minValue = req($minName, '');
+            $maxValue = req($maxName, '');
+            $rangeId = 'admin-filter-range-' . preg_replace('/[^a-zA-Z0-9_-]/', '-', $minName);
+            ?>
+            <fieldset class="admin-filter-range" data-admin-filter-range>
+                <legend><?= encode($field['label'] ?? 'Range') ?></legend>
+                <div class="admin-filter-range__inputs">
+                    <label for="<?= encode($rangeId) ?>-min">Min</label>
+                    <input type="number" id="<?= encode($rangeId) ?>-min" name="<?= encode($minName) ?>" value="<?= encode($minValue) ?>" data-range-min>
+                    <label for="<?= encode($rangeId) ?>-max">Max</label>
+                    <input type="number" id="<?= encode($rangeId) ?>-max" name="<?= encode($maxName) ?>" value="<?= encode($maxValue) ?>" data-range-max>
+                </div>
+            </fieldset>
             <?php
             return;
         }
@@ -349,10 +373,7 @@ if ($adminPaginate) {
         hidden
     >
         <span class="admin-bulk-bar__count" data-bulk-count>0 selected</span>
-        <button type="button" class="admin-bulk-bar__link" data-bulk-select-page>Select all on this page</button>
-        <?php if (!empty($adminBulkSelect['selectAllUrl'])): ?>
-            <button type="button" class="admin-bulk-bar__link" data-bulk-select-all>Select all <?= (int) ($adminTotal ?? count($adminRows)) ?> matching</button>
-        <?php endif; ?>
+        <button type="button" class="admin-bulk-bar__link" data-bulk-select-page>Select all on this page only</button>
         <div class="admin-bulk-bar__actions">
             <?php foreach ($adminBulkSelect['actions'] ?? [] as $bulkAction): ?>
                 <button
@@ -389,7 +410,7 @@ if ($adminPaginate) {
         <tr>
             <?php if ($adminBulkSelect): ?>
                 <th class="admin-table__bulk-select">
-                    <input type="checkbox" data-bulk-select-page-checkbox aria-label="Select all rows on this page">
+                    <input type="checkbox" data-bulk-select-page-checkbox aria-label="Select all matching rows">
                 </th>
             <?php endif; ?>
             <?php foreach ($adminColumns as $field => $label): ?>

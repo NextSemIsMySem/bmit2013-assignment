@@ -16,8 +16,16 @@ $stmt = $_db->query(
 $vouchers = $stmt->fetchAll();
 
 $_title = 'Archived Vouchers';
+$_hideHeading = true;
 include '../../_head.php';
+?>
 
+<div class="admin-page-header">
+    <h1>Archived Vouchers</h1>
+    <a class="btn-dark" href="vouchers.php">&larr; Back to Vouchers</a>
+</div>
+
+<?php
 $adminColumns = [
     'name'            => 'Name',
     'start_date'      => 'Start Date',
@@ -26,9 +34,6 @@ $adminColumns = [
 $adminRows = $vouchers;
 $adminPaginate = true;
 $adminEmptyMessage = 'No archived vouchers. A voucher is archived once it expires, and automatically removed after sitting expired for 3 days.';
-$adminToolbarButtons = [
-    ['label' => '← Back to Vouchers', 'url' => 'vouchers.php', 'class' => 'btn-dark'],
-];
 $adminActions = [
     [
         'label'  => 'View voucher',

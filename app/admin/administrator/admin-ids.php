@@ -1,15 +1,13 @@
 <?php
 require '../../_base.php';
-auth('admin');
+auth('superadmin');
 
 header('Content-Type: application/json');
 
 $name = req('name', '');
-// Same role filter (and parenthesising) as index.php, so bulk "select all"
-// can never pick up admin accounts.
 $stmt = $_db->prepare(
     "SELECT user_id, active FROM user
-     WHERE role = 'member'
+     WHERE role IN ('admin','superadmin')
        AND (username LIKE ? OR name LIKE ? OR email LIKE ?)"
 );
 $stmt->execute(["%$name%", "%$name%", "%$name%"]);
