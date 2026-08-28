@@ -8,6 +8,7 @@ if (is_post()) {
     $email    = req('email');
     $password = req('password');
     $confirm  = req('confirm');
+    $passwordFieldsInvalid = false;
 
     if ($name === '') {
         $_err['name'] = 'Name is required.';
@@ -37,19 +38,20 @@ if (is_post()) {
         $_err['email'] = 'Email is already registered.';
     }
 
-    $passwordFailed = false;
     if ($pwError = password_error($password)) {
         $_err['password'] = $pwError;
-        $passwordFailed = true;
+        $passwordFieldsInvalid = true;
     }
 
     if ($confirm === '') {
         $_err['confirm'] = 'Please confirm the password.';
+        $passwordFieldsInvalid = true;
     } elseif ($confirm !== $password) {
         $_err['confirm'] = 'Passwords do not match.';
+        $passwordFieldsInvalid = true;
     }
 
-    if ($passwordFailed) {
+    if ($passwordFieldsInvalid) {
         $_REQUEST['password'] = '';
         $_REQUEST['confirm'] = '';
     }

@@ -8,10 +8,13 @@ if (is_post()) {
     $username = req('username');
     $name     = req('name');
     $f = get_file('photo');
+    $passwordFieldsInvalid = false;
 
     // Validate: email
     if ($email === '') {
         $_err['email'] = 'Email is required.';
+    } elseif (!preg_match('/^[\x21-\x7E]+$/', $email)) {
+        $_err['email'] = 'Email may only contain English characters and keyboard symbols.';
     } elseif (strlen($email) > 255) {
         $_err['email'] = 'Maximum 255 characters.';
     } elseif (!is_email($email)) {
@@ -21,17 +24,18 @@ if (is_post()) {
     }
 
     // Validate: password (server-side)
-    $passwordFailed = false;
     if ($pwError = password_error($password)) {
         $_err['password'] = $pwError;
-        $passwordFailed = true;
+        $passwordFieldsInvalid = true;
     }
 
     // Validate: confirm
     if ($confirm === '') {
         $_err['confirm'] = 'Please confirm your password.';
+        $passwordFieldsInvalid = true;
     } elseif ($confirm !== $password) {
         $_err['confirm'] = 'Passwords do not match.';
+        $passwordFieldsInvalid = true;
     }
 
     // Validate: username
@@ -41,6 +45,8 @@ if (is_post()) {
         $_err['username'] = 'Username must be at least 5 characters.';
     } elseif (!preg_match('/[A-Za-z]/', $username)) {
         $_err['username'] = 'Username must contain alphabetic characters.';
+    } elseif (!preg_match('/^[A-Za-z0-9_]+$/', $username)) {
+        $_err['username'] = 'Username may only contain English letters, numbers and underscores.';
     } elseif (strlen($username) > 50) {
         $_err['username'] = 'Username must be at most 50 characters.';
     } elseif (!is_unique('user', 'username', $username)) {
@@ -50,30 +56,25 @@ if (is_post()) {
     // Validate: display name
     if (strlen($name) > 50) {
         $_err['name'] = 'Display name must be at most 50 characters.';
+    } elseif ($name !== '' && !preg_match("/^[A-Za-z0-9 .,'-]+$/", $name)) {
+        $_err['name'] = 'Display name may only contain English letters, numbers, spaces and common punctuation.';
     }
 
-    // Validate: photo
-    if (!$f) {
-        $_err['photo'] = 'Photo is required.';
-    } elseif (!str_starts_with($f->type, 'image/')) {
+    // Validate: photo (optional)
+    if ($f && !str_starts_with($f->type, 'image/')) {
         $_err['photo'] = 'Uploaded file must be an image.';
-    } elseif ($f->size > 1 * 1024 * 1024) {
+    } elseif ($f && $f->size > 1 * 1024 * 1024) {
         $_err['photo'] = 'Maximum 1MB file size.';
     }
 
-    // Clear invalid password fields after failed submit only for actual password-related errors.
-    if (isset($_err['confirm']) && $_err['confirm'] === 'Passwords do not match.') {
-        $_REQUEST['confirm'] = '';
-    }
-
-    if ($passwordFailed) {
+    if ($passwordFieldsInvalid) {
         $_REQUEST['password'] = '';
         $_REQUEST['confirm'] = '';
     }
 
     if (!$_err) {
         // Save photo
-        $photo = save_photo($f, __DIR__ . '/../photos');
+        $photo = $f ? save_photo($f, __DIR__ . '/../photos') : '';
 
         // Create the account inactive until the email link is verified.
         $stm = $_db->prepare(
@@ -108,7 +109,7 @@ if (is_post()) {
         if (!$sent) {
             $_err['email'] = 'Could not send the verification email right now. Please try again later.';
         } else {
-            temp('info', 'Registration successful. Check your email to verify your account.');
+            temp('info', 'A verification email has been sent to your email address, if exists.');
             redirect('/login.php');
         }
     }
@@ -122,9 +123,9 @@ include '../_head.php';
 ?>
 
 <form method="post" class="form" enctype="multipart/form-data">
-    <?php html_text('email', 'Email', 'email'); ?>
+    <?php html_text('email', 'Email', 'email', false, '[!-~]+', 'email'); ?>
 
-    <?php html_text('username', 'Username'); ?>
+    <?php html_restricted_text('username', 'Username', '[A-Za-z0-9_]+', 'username', 50); ?>
 
     <?php html_password('password', 'Password'); ?>
 
@@ -141,12 +142,12 @@ include '../_head.php';
 
     <?php html_password('confirm', 'Confirm'); ?>
 
-    <?php html_text('name', 'Display Name'); ?>
+    <?php html_restricted_text('name', 'Display Name', "[A-Za-z0-9 .,'-]*", 'display-name', 50); ?>
 
-    <label for="photo">Photo</label>
+    <label for="photo">Photo (optional)</label>
     <label class="upload" tabindex="0">
         <?php html_file('photo', 'image/*', 'hidden'); ?>
-        <img src="/images/photo.jpg">
+        <img src="/images/profile.png">
     </label>
     <?php echo err('photo'); ?>
 

@@ -1259,6 +1259,58 @@ h1 {
     font: inherit;
 }
 
+.password-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-wrap input {
+    padding-right: 42px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    color: #5f6675;
+    background: transparent;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    color: #1a1a2e;
+}
+
+.password-toggle__hide {
+    display: none;
+    position: relative;
+}
+
+.password-toggle__hide::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 25px;
+    height: 2px;
+    background: currentColor;
+    transform: translate(-50%, -50%) rotate(-35deg);
+}
+
+.password-toggle.is-visible .password-toggle__show {
+    display: none;
+}
+
+.password-toggle.is-visible .password-toggle__hide {
+    display: inline-block;
+}
+
 .form .radios {
     display: flex;
     gap: 12px;
@@ -1467,6 +1519,12 @@ label.upload img {
     height: 320px;
     margin-top: 8px;
     border: 1px solid #d7dbe5;
+}
+
+.address-form input[readonly] {
+    color: #5f6675;
+    background: #eef0f4;
+    cursor: not-allowed;
 }
 
 .checkbox-label {

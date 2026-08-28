@@ -8,13 +8,22 @@ if ($_user) {
 if (is_post()) {
     $identifier = req('identifier');
     $password = req('password');
+    $passwordInvalid = false;
 
     if ($identifier === '') {
         $_err['identifier'] = 'Email or username is required.';
+    } elseif (!preg_match('/^[\x21-\x7E]+$/', $identifier)) {
+        $_err['identifier'] = 'Email or username may only contain English characters and keyboard symbols.';
+    } elseif (!is_email($identifier) && !preg_match('/^[A-Za-z0-9_]+$/', $identifier)) {
+        $_err['identifier'] = 'Username may only contain English letters, numbers and underscores.';
     }
 
     if ($password === '') {
         $_err['password'] = 'Password is required.';
+        $passwordInvalid = true;
+    } elseif (!preg_match('/^[\x21-\x7E]+$/', $password)) {
+        $_err['password'] = 'Password may only contain English letters, numbers and keyboard symbols.';
+        $passwordInvalid = true;
     }
 
     if (!$_err) {
@@ -31,14 +40,21 @@ if (is_post()) {
 
         if ($u && !$u->active) {
             $_err['password'] = 'This account has been disabled.';
+            $passwordInvalid = true;
         } elseif ($u && !$u->email_verified) {
             $_err['password'] = 'Please verify your email before logging in.';
+            $passwordInvalid = true;
         } elseif ($u) {
             temp('info', 'Login successful.');
             login($u, '/index.php');
         } else {
             $_err['password'] = 'Invalid email or password'; // generic — don't reveal which
+            $passwordInvalid = true;
         }
+    }
+
+    if ($passwordInvalid) {
+        $_REQUEST['password'] = '';
     }
 }
 
@@ -47,7 +63,7 @@ include '_head.php';
 ?>
 
 <form class="form" method="post">
-    <?php html_text('identifier', 'Email or Username'); ?>
+    <?php html_text('identifier', 'Email or Username', 'text', false, '[!-~]+', 'identifier'); ?>
     <?php html_password('password', 'Password'); ?>
     <section class="buttons">
         <button type="submit">Login</button>

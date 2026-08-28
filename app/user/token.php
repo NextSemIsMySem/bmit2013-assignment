@@ -15,20 +15,21 @@ if (!is_exists('token', 'id', $id)) {
 if (is_post()) {
     $password = req('password');
     $confirm = req('confirm');
-    $passwordFailed = false;
-
+    $passwordFieldsInvalid = false;
     if ($pwError = password_error($password, 'New password')) {
         $_err['password'] = $pwError;
-        $passwordFailed = true;
+        $passwordFieldsInvalid = true;
     }
 
     if ($confirm === '') {
         $_err['confirm'] = 'Please confirm your new password.';
+        $passwordFieldsInvalid = true;
     } elseif ($confirm !== $password) {
         $_err['confirm'] = 'Does not match with new password.';
+        $passwordFieldsInvalid = true;
     }
 
-    if ($passwordFailed) {
+    if ($passwordFieldsInvalid) {
         $_REQUEST['password'] = '';
         $_REQUEST['confirm'] = '';
     }

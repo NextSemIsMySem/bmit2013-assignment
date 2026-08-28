@@ -68,17 +68,30 @@ function html_required_star() {
     return ' <span class="required-star">*</span>';
 }
 
-function html_text($name, $label, $type = 'text', $required = false) {
+function html_text($name, $label, $type = 'text', $required = false, $pattern = '', $policy = '') {
     $value = encode(req($name));
     echo '<label for="' . $name . '">' . encode($label) . ($required ? html_required_star() : '') . '</label>';
-    echo '<input type="' . $type . '" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
+    $attributes = $pattern !== '' ? ' pattern="' . encode($pattern) . '"' : '';
+    $attributes .= $policy !== '' ? ' data-character-policy="' . encode($policy) . '"' : '';
+    echo '<input type="' . $type . '" id="' . $name . '" name="' . $name . '" value="' . $value . '"' . $attributes . '>';
+    echo err($name);
+}
+
+function html_restricted_text($name, $label, $pattern, $policy, $maxlength = '') {
+    $value = encode(req($name));
+    $max = $maxlength !== '' ? ' maxlength="' . (int) $maxlength . '"' : '';
+    echo '<label for="' . $name . '">' . encode($label) . '</label>';
+    echo '<input type="text" id="' . $name . '" name="' . $name . '" value="' . $value . '" pattern="' . encode($pattern) . '" data-character-policy="' . encode($policy) . '"' . $max . '>';
     echo err($name);
 }
 
 function html_password($name, $attr = '') {
     $value = encode(req($name));
     echo '<label for="' . $name . '">' . encode($attr !== '' ? $attr : 'Password') . '</label>';
-    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="' . $value . '">';
+    echo '<div class="password-input-wrap">';
+    echo '<input type="password" id="' . $name . '" name="' . $name . '" value="' . $value . '" pattern="[!-~]+" data-character-policy="password">';
+    echo '<button type="button" class="password-toggle" data-password-toggle="' . $name . '" aria-label="Show password" aria-pressed="false"><span class="password-toggle__show" aria-hidden="true">&#128065;</span><span class="password-toggle__hide" aria-hidden="true">&#128065;</span></button>';
+    echo '</div>';
     echo err($name);
 }
 
@@ -180,6 +193,7 @@ function is_email($v) {
 function password_error($password, $label = 'Password') {
     if ($password === '')                                   return "$label is required.";
     if (strlen($password) < 8 || strlen($password) > 50)     return "$label must be between 8-50 characters.";
+    if (!preg_match('/^[\x21-\x7E]+$/', $password))         return "$label may only contain English letters, numbers and keyboard symbols.";
     $ok = preg_match('/[a-z]/', $password) && preg_match('/[A-Z]/', $password)
        && preg_match('/[0-9]/', $password) && preg_match('/[^a-zA-Z0-9]/', $password);
     if (!$ok) return "$label must include upper/lowercase letters, a number and a symbol.";

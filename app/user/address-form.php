@@ -51,9 +51,9 @@ function google_address_from_place($placeId) {
     ];
 }
 
-function address_input($name, $label, $value = '') {
+function address_input($name, $label, $value = '', $readonly = false) {
     echo '<label for="address-' . encode($name) . '">' . encode($label) . '</label>';
-    echo '<input id="address-' . encode($name) . '" name="' . encode($name) . '" value="' . encode($value) . '">';
+    echo '<input id="address-' . encode($name) . '" name="' . encode($name) . '" value="' . encode($value) . '"' . ($readonly ? ' readonly' : '') . '>';
     echo err('address_' . $name);
 }
 
@@ -153,11 +153,11 @@ include '../_head.php';
         <?= err('address_location') ?>
     </div>
     <?php address_input('label', 'Address Label', $editAddress->label); ?>
-    <?php address_input('street', 'Street Address', $editAddress->street); ?>
-    <?php address_input('city', 'City', $editAddress->city); ?>
-    <?php address_input('state', 'State', $editAddress->state); ?>
-    <?php address_input('postal_code', 'Postal Code', $editAddress->postal_code); ?>
-    <?php address_input('country', 'Country', $editAddress->country); ?>
+    <?php address_input('street', 'Street Address', $editAddress->street, true); ?>
+    <?php address_input('city', 'City', $editAddress->city, true); ?>
+    <?php address_input('state', 'State', $editAddress->state, true); ?>
+    <?php address_input('postal_code', 'Postal Code', $editAddress->postal_code, true); ?>
+    <?php address_input('country', 'Country', $editAddress->country, true); ?>
     <input type="hidden" id="address-latitude" name="latitude" value="<?= encode($editAddress->latitude) ?>">
     <input type="hidden" id="address-longitude" name="longitude" value="<?= encode($editAddress->longitude) ?>">
     <label class="checkbox-label"><input type="checkbox" name="is_default" value="1" <?= $editAddress->is_default ? 'checked' : '' ?>> Make this my default shipping address</label>
