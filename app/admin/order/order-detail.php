@@ -43,7 +43,6 @@ $canMarkPaid = !$hasPendingCancellation
     && ($payment->payment_method ?? '') === 'cod';
 
 $canMarkShipped = !$hasPendingCancellation && $order->status === 'paid';
-$canMarkCompleted = !$hasPendingCancellation && $order->status === 'shipped';
 
 $_title = 'Order #' . $order->order_id;
 include '../../_head.php';
@@ -87,15 +86,6 @@ include '../../_head.php';
                 data-post="mark-shipped.php?id=<?= $order->order_id ?>"
                 data-confirm="Mark this order as shipped?"
             >Mark as Shipped</button>
-        <?php endif; ?>
-
-        <?php if ($canMarkCompleted): ?>
-            <button
-                class="btn-green"
-                type="button"
-                data-post="mark-completed.php?id=<?= $order->order_id ?>"
-                data-confirm="Mark this order as completed?"
-            >Mark as Completed</button>
         <?php endif; ?>
     </section>
 </section>

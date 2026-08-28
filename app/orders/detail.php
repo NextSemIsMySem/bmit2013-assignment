@@ -38,6 +38,9 @@ $canRetryPayment = $order->status === 'pending'
     && ($payment->payment_method ?? '') === 'card'
     && !order_has_pending_cancellation($order);
 
+$canConfirmReceived = $order->status === 'shipped'
+    && !order_has_pending_cancellation($order);
+
 $_title = 'Order #' . $order->order_id;
 include '../_head.php';
 ?>
@@ -54,10 +57,20 @@ include '../_head.php';
                 <button class="purchase-button" type="submit">Pay Now</button>
             </form>
         <?php endif; ?>
+        <?php if ($canConfirmReceived): ?>
+            <form method="post" action="confirm-received.php">
+                <input type="hidden" name="order_id" value="<?= $order->order_id ?>">
+                <button class="purchase-button" type="submit">Order Received</button>
+            </form>
+        <?php endif; ?>
         <?php if ($canRequestCancellation): ?>
             <button class="order-cancel-button" type="button" id="cancel-order-open">Cancel Order</button>
         <?php endif; ?>
     </section>
+
+    <?php if ($canConfirmReceived): ?>
+        <p class="order-support-note">Not received your order yet? Please contact support at <a href="mailto:support.admin@forgefit.test">support.admin@forgefit.test</a>.</p>
+    <?php endif; ?>
 </section>
 
 <?php if ($canRequestCancellation): ?>

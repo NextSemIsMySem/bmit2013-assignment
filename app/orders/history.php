@@ -101,6 +101,12 @@ include '../_head.php';
                                 <button class="order-card-button order-card-button--primary" type="submit">Pay Now</button>
                             </form>
                         <?php endif; ?>
+                        <?php if ($order->status === 'shipped' && !$order->cancellation_requested_at): ?>
+                            <form method="post" action="confirm-received.php">
+                                <input type="hidden" name="order_id" value="<?= $order->order_id ?>">
+                                <button class="order-card-button order-card-button--primary" type="submit">Order Received</button>
+                            </form>
+                        <?php endif; ?>
                         <a class="order-card-button order-card-button--primary" href="detail.php?id=<?= $order->order_id ?>">View Order Details</a>
                     </div>
                 </footer>

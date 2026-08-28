@@ -3218,6 +3218,17 @@ button.checkout-back {
     background: #c0392b;
 }
 
+.order-support-note {
+    margin-top: 12px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.order-support-note a {
+    color: #e74c3c;
+    font-weight: 700;
+}
+
 .order-detail-info {
     margin-bottom: 20px;
     display: grid;
