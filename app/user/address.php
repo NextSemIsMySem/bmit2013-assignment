@@ -1,6 +1,6 @@
 <?php
 require '../_base.php';
-auth();
+auth('member');
 
 if (is_post()) {
     verify_csrf();

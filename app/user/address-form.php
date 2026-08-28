@@ -1,6 +1,6 @@
 <?php
 require '../_base.php';
-auth();
+auth('member');
 
 // Only follow `return` back to a local page (never an absolute/external
 // URL) — this is reachable from checkout when the buyer has no saved
