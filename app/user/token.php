@@ -7,12 +7,16 @@ $_db->query('DELETE FROM token WHERE expire < NOW()');   // purge expired first
 // is re-verified on submit — a token that expired or was used in the meantime
 // is rejected rather than trusted from the earlier GET.
 $id = req('id');
-if (!is_exists('token', 'id', $id)) {
+$tokenStmt = $_db->prepare('SELECT user_id FROM token WHERE id = ? AND type = "reset" AND expire >= NOW()');
+$tokenStmt->execute([$id]);
+$tokenUserId = $tokenStmt->fetchColumn();
+if (!$tokenUserId) {
     temp('info', 'Invalid or expired link. Please try again.');
     redirect('/user/reset.php');
 }
 
 if (is_post()) {
+    verify_csrf();
     $password = req('password');
     $confirm = req('confirm');
     $passwordFieldsInvalid = false;
@@ -35,12 +39,21 @@ if (is_post()) {
     }
 
     if (!$_err) {
-        $stm = $_db->prepare('UPDATE user SET password = SHA1(?)
-                              WHERE user_id = (SELECT user_id FROM token WHERE id = ?)');
-        $stm->execute([$password, $id]);
+        $_db->beginTransaction();
+        $lockStmt = $_db->prepare('SELECT user_id FROM token WHERE id = ? AND type = "reset" AND expire >= NOW() FOR UPDATE');
+        $lockStmt->execute([$id]);
+        $tokenUserId = $lockStmt->fetchColumn();
+        if (!$tokenUserId) {
+            $_db->rollBack();
+            temp('info', 'Invalid or expired link. Please try again.');
+            redirect('/user/reset.php');
+        }
+        $stm = $_db->prepare('UPDATE user SET password = SHA1(?) WHERE user_id = ?');
+        $stm->execute([$password, $tokenUserId]);
 
         $stm = $_db->prepare('DELETE FROM token WHERE id = ?');   // single-use token
         $stm->execute([$id]);
+        $_db->commit();
 
         temp('info', 'Password updated. Please log in.');
         redirect('/login.php');
@@ -55,6 +68,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <input type="hidden" name="id" value="<?= encode($id) ?>">
     <?php html_password('password', 'New Password'); ?>
 

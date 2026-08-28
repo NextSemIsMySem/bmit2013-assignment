@@ -3,6 +3,7 @@ require '../../_base.php';
 auth('superadmin');
 
 if (is_post()) {
+    verify_csrf();
     $name     = req('name');
     $username = req('username');
     $email    = req('email');

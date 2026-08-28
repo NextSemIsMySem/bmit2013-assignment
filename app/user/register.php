@@ -2,6 +2,7 @@
 require '../_base.php';
 
 if (is_post()) {
+    verify_csrf();
     $email    = req('email');
     $password = req('password');
     $confirm  = req('confirm');
@@ -81,12 +82,13 @@ if (is_post()) {
             'INSERT INTO user (email, username, password, name, photo, role, active, email_verified) VALUES (?, ?, SHA1(?), ?, ?, "member", 1, 0)'
         );
         $stm->execute([$email, $username, $password, $name, $photo]);
+        $userId = $_db->lastInsertId();
 
         $tokenId = bin2hex(random_bytes(32));
         $tokenStmt = $_db->prepare(
             'INSERT INTO token (id, expire, user_id, type) VALUES (?, ADDTIME(NOW(), "24:00"), ?, "verification")'
         );
-        $tokenStmt->execute([$tokenId, $_db->lastInsertId()]);
+        $tokenStmt->execute([$tokenId, $userId]);
 
         $sent = false;
         try {
@@ -103,7 +105,8 @@ if (is_post()) {
             $sent = true;
         } catch (Exception $e) {
             $_db->prepare('DELETE FROM token WHERE id = ?')->execute([$tokenId]);
-            $_db->prepare('DELETE FROM user WHERE email = ? AND active = 0')->execute([$email]);
+            $_db->prepare('DELETE FROM user WHERE user_id = ?')->execute([$userId]);
+            if ($photo) @unlink(__DIR__ . '/../photos/' . $photo);
         }
 
         if (!$sent) {
@@ -123,6 +126,7 @@ include '../_head.php';
 ?>
 
 <form method="post" class="form" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <?php html_text('email', 'Email', 'email', false, '[!-~]+', 'email'); ?>
 
     <?php html_restricted_text('username', 'Username', '[A-Za-z0-9_]+', 'username', 50); ?>

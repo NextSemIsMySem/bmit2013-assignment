@@ -3,6 +3,7 @@ require '../_base.php';
 auth();
 
 if (is_post()) {
+    verify_csrf();
     $password = req('password');
     $new_password = req('new_password');
     $confirm = req('confirm');
@@ -43,9 +44,10 @@ if (is_post()) {
     if (!$_err) {
         $stm = $_db->prepare('UPDATE user SET password = SHA1(?) WHERE user_id = ?');
         $stm->execute([$new_password, $_user->user_id]);
+        $_SESSION['password_hash'] = sha1($new_password);
 
         temp('info', 'Password updated.');
-        redirect('/user/profile.php');
+        redirect('/');
     }
 }
 
@@ -57,6 +59,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_password('password', 'Current Password'); ?>
     <?php html_password('new_password', 'New Password'); ?>
 

@@ -2,6 +2,7 @@
 require '../_base.php';
 
 if (is_post()) {
+    verify_csrf();
     $email = req('email');
 
     if ($email === '') {
@@ -20,13 +21,13 @@ if (is_post()) {
         $sent = true;
 
         if ($u) {
-            $id = sha1(uniqid() . rand());
+            $id = bin2hex(random_bytes(32));
 
             // One active reset link per user: drop any earlier ones.
             $stm = $_db->prepare('DELETE FROM token WHERE user_id = ?');
             $stm->execute([$u->user_id]);
 
-            $stm = $_db->prepare('INSERT INTO token (id, expire, user_id) VALUES (?, ADDTIME(NOW(), "00:05"), ?)');
+            $stm = $_db->prepare('INSERT INTO token (id, expire, user_id, type) VALUES (?, ADDTIME(NOW(), "00:05"), ?, "reset")');
             $stm->execute([$id, $u->user_id]);
 
             $url = base("user/token.php?id=$id");
@@ -76,6 +77,7 @@ include '../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_text('email', 'Email', 'email'); ?>
     <section class="buttons">
         <button type="submit">Submit</button>

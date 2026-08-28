@@ -6,6 +6,7 @@ if ($_user) {
 }
 
 if (is_post()) {
+    verify_csrf();
     $identifier = req('identifier');
     $password = req('password');
     $passwordInvalid = false;
@@ -32,9 +33,7 @@ if (is_post()) {
         // falls through to the generic message, revealing neither the account nor the
         // separate admin entrance.
         $loginColumn = is_email($identifier) ? 'email' : 'username';
-        $stm = $_db->prepare(
-            "SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role = 'member'"
-        );
+        $stm = $_db->prepare("SELECT * FROM user WHERE `$loginColumn` = ? AND password = SHA1(?) AND role = 'member'");
         $stm->execute([$identifier, $password]);
         $u = $stm->fetch();
 
@@ -63,6 +62,7 @@ include '_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_text('identifier', 'Email or Username', 'text', false, '[!-~]+', 'identifier'); ?>
     <?php html_password('password', 'Password'); ?>
     <section class="buttons">

@@ -51,6 +51,43 @@ function google_address_from_place($placeId) {
     ];
 }
 
+function google_address_from_location($latitude, $longitude) {
+    $apiKey = google_maps_api_key();
+    if ($apiKey === '' || !is_numeric($latitude) || !is_numeric($longitude)) return null;
+
+    $url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query([
+        'latlng' => $latitude . ',' . $longitude,
+        'key' => $apiKey,
+    ]);
+    $response = @file_get_contents($url, false, stream_context_create([
+        'http' => ['timeout' => 5],
+    ]));
+    $data = $response === false ? null : json_decode($response, true);
+    if (($data['status'] ?? '') !== 'OK' || empty($data['results'][0])) return null;
+
+    $result = $data['results'][0];
+    $components = [];
+    foreach ($result['address_components'] ?? [] as $component) {
+        foreach ($component['types'] as $type) {
+            $components[$type] = $component['long_name'];
+        }
+    }
+
+    $street = trim(($components['street_number'] ?? '') . ' ' . ($components['route'] ?? ''));
+    $location = $result['geometry']['location'] ?? [];
+    if ($street === '' || empty($components['postal_code']) || empty($components['country']) || !isset($location['lat'], $location['lng'])) return null;
+
+    return [
+        'street' => $street,
+        'city' => $components['locality'] ?? $components['postal_town'] ?? $components['administrative_area_level_2'] ?? '',
+        'state' => $components['administrative_area_level_1'] ?? '',
+        'postal_code' => $components['postal_code'],
+        'country' => $components['country'],
+        'latitude' => (string) $location['lat'],
+        'longitude' => (string) $location['lng'],
+    ];
+}
+
 function address_input($name, $label, $value = '', $readonly = false) {
     echo '<label for="address-' . encode($name) . '">' . encode($label) . '</label>';
     echo '<input id="address-' . encode($name) . '" name="' . encode($name) . '" value="' . encode($value) . '"' . ($readonly ? ' readonly' : '') . '>';
@@ -68,6 +105,7 @@ if ($addressId) {
 }
 
 if (is_post()) {
+    verify_csrf();
     $label = req('label');
     $street = req('street');
     $city = req('city');
@@ -79,7 +117,11 @@ if (is_post()) {
     $placeId = req('place_id');
     $isDefault = req('is_default') === '1';
 
-    $googleAddress = google_address_from_place($placeId);
+    // Existing addresses may not have a place ID stored. Re-verify their
+    // saved map coordinates instead of requiring the user to select again.
+    $googleAddress = $placeId !== ''
+        ? google_address_from_place($placeId)
+        : google_address_from_location($latitude, $longitude);
     if (!$googleAddress) {
         $_err['address_location'] = 'Please choose a real address from Google Maps.';
     } else {
@@ -109,6 +151,7 @@ if (is_post()) {
 
     if (!$_err) {
         $_db->beginTransaction();
+        $_db->prepare('SELECT user_id FROM user WHERE user_id = ? FOR UPDATE')->execute([$_user->user_id]);
         if ($isDefault || !$addressId) {
             $_db->prepare('UPDATE address SET is_default = 0 WHERE user_id = ?')->execute([$_user->user_id]);
         }
@@ -143,6 +186,7 @@ include '../_head.php';
 
 <p>Choose a location on the map or search for your shipping address.</p>
 <form class="form address-form" method="post">
+    <?= csrf_field() ?>
     <input type="hidden" name="address_id" value="<?= $addressId ? (int) $addressId : '' ?>">
     <input type="hidden" name="return" value="<?= encode($returnUrl) ?>">
     <input type="hidden" id="address-place-id" name="place_id" value="">
