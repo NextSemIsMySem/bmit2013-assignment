@@ -160,7 +160,7 @@
         </a>
         <?php endif; ?>
         <?php endif; ?>
-        <?php if ($_user): ?>
+        <?php if ($_user && !is_admin()): ?>
         <a href="/logout.php">Logout</a>
         <?php endif; ?>
     </nav>

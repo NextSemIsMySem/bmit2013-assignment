@@ -369,7 +369,11 @@ if ($adminPaginate) {
         class="admin-bulk-bar"
         data-bulk-select
         data-storage-key="<?= encode($adminBulkSelect['storageKey']) ?>"
-        <?php if (!empty($adminBulkSelect['selectAllUrl'])): ?>data-select-all-url="<?= encode($adminBulkSelect['selectAllUrl']) ?>"<?php endif; ?>
+        <?php if (!empty($adminBulkSelect['selectAllUrl'])): ?>
+            data-select-all-url="<?= encode($adminBulkSelect['selectAllUrl']) ?>"
+            data-select-all-key="<?= encode($adminBulkSelect['key']) ?>"
+            <?php if (!empty($adminBulkSelect['statusKey'])): ?>data-select-all-status-key="<?= encode($adminBulkSelect['statusKey']) ?>"<?php endif; ?>
+        <?php endif; ?>
         hidden
     >
         <span class="admin-bulk-bar__count" data-bulk-count>0 selected</span>
