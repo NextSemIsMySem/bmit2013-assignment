@@ -3,7 +3,8 @@ require '../_base.php';
 auth('member');
 
 $stmt = $_db->prepare(
-    'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, ci.quantity
+    'SELECT p.product_id, p.product_name, p.price, p.stock, p.availability, ci.quantity,
+            (SELECT product_imageid FROM product_image WHERE product_id = p.product_id ORDER BY product_imageid LIMIT 1) AS image
      FROM cart_item ci
      JOIN product p ON p.product_id = ci.product_id
      WHERE ci.user_id = ?
@@ -49,7 +50,10 @@ include '../_head.php';
                         <?= $unavailable ? 'disabled' : 'checked' ?>
                     >
 
-                    <img src="/images/sport.png" alt="<?= encode($item->product_name) ?>">
+                    <img
+                        src="<?= !empty($item->image) ? '/photos/' . encode($item->image) : '/images/sport.png' ?>"
+                        alt="<?= encode($item->product_name) ?>"
+                    >
 
                     <div class="cart-item-info">
                         <a href="/product/product.php?id=<?= $item->product_id ?>"><?= encode($item->product_name) ?></a>
@@ -72,7 +76,7 @@ include '../_head.php';
                             type="button"
                             data-quantity-minus
                             aria-label="Decrease quantity"
-                            <?= $item->quantity <= 1 || $item->stock < 1 ? 'disabled' : '' ?>
+                            <?= $unavailable || $item->quantity <= 1 ? 'disabled' : '' ?>
                         >&minus;</button>
                         <input
                             type="number"
@@ -87,7 +91,7 @@ include '../_head.php';
                             type="button"
                             data-quantity-plus
                             aria-label="Increase quantity"
-                            <?= $item->quantity >= $item->stock ? 'disabled' : '' ?>
+                            <?= $unavailable || $item->quantity >= $item->stock ? 'disabled' : '' ?>
                         >+</button>
                     </div>
 

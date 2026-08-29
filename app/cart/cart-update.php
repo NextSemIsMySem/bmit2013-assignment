@@ -20,7 +20,7 @@ if (!$productId || !$quantity) {
 }
 
 $stmt = $_db->prepare(
-    'SELECT p.price, p.stock
+    'SELECT p.price, p.stock, p.availability
      FROM cart_item ci
      JOIN product p ON p.product_id = ci.product_id
      WHERE ci.user_id = ? AND ci.product_id = ?'
@@ -34,9 +34,9 @@ if (!$row) {
     exit;
 }
 
-if ($row->stock < 1) {
+if (!$row->availability || $row->stock < 1) {
     http_response_code(409);
-    echo json_encode(['message' => 'This item is no longer in stock.']);
+    echo json_encode(['message' => 'This item is no longer available.']);
     exit;
 }
 

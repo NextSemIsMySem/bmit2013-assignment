@@ -1710,8 +1710,13 @@ label.upload img {
     right: 6px;
 }
 
-.round-delete-button:hover {
+.round-delete-button:hover:not(:disabled) {
     background: #e74c3c22;
+}
+
+.round-delete-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .btn-dark {
