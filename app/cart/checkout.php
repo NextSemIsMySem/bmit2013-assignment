@@ -116,10 +116,17 @@ if (is_post()) {
     // Clearing ignores whatever the (readonly) field still holds and blanks
     // the field on re-render too, rather than just skipping the lookup below
     // and leaving the old code sitting there uneditable.
-    $voucherCode = $clearVoucher ? '' : req('voucher_code');
+    $voucherCode = $clearVoucher ? '' : strtoupper(trim(req('voucher_code')));
     $_REQUEST['voucher_code'] = $voucherCode;
 
-    if ($voucherCode !== '') {
+    if ($voucherCode !== '' && !preg_match('/^[0-9A-Z]+$/', $voucherCode)) {
+        // Client-side JS already restricts typed input to this charset, so
+        // this only matters for a crafted request — a code outside it can
+        // never match a real one anyway, so treat it the same as not found
+        // rather than running a query that can't possibly match.
+        $_err['voucher_code'] = 'This voucher code is invalid or expired.';
+        $_REQUEST['voucher_code'] = '';
+    } elseif ($voucherCode !== '') {
         $voucherStmt = $_db->prepare(
             "SELECT v.id, v.code, v.status, vc.discount_type, vc.discount_value, vc.discount_percentage, vc.minimum_spend
              FROM voucher v
@@ -130,7 +137,13 @@ if (is_post()) {
         $voucher = $voucherStmt->fetch();
 
         if (!$voucher) {
+            // The code itself is wrong/expired, not just currently
+            // inapplicable — retyping the same value would fail again, so
+            // clear it rather than leave it sitting there to retry as-is.
+            // A code that's valid but blocked by minimum spend (below) stays
+            // in the field, since re-submitting it later can still work.
             $_err['voucher_code'] = 'This voucher code is invalid or expired.';
+            $_REQUEST['voucher_code'] = '';
         } elseif ($subtotal < $voucher->minimum_spend) {
             $_err['voucher_code'] = 'Minimum spend of RM ' . number_format($voucher->minimum_spend, 2) . ' not met.';
         } else {
@@ -139,6 +152,12 @@ if (is_post()) {
                 : (float) $voucher->discount_value;
             $discountAmount = min($discountAmount, $subtotal);
         }
+    } elseif ($applyVoucherOnly) {
+        // Placing an order without a voucher is fine (it's optional) — but
+        // clicking Apply specifically implies there should be a code to
+        // apply, so an empty field there is worth flagging rather than
+        // silently doing nothing.
+        $_err['voucher_code'] = 'Please enter a voucher code.';
     }
 
     if (!$applyVoucherOnly && !$clearVoucher) {
