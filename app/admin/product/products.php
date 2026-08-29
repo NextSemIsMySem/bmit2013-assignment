@@ -57,6 +57,24 @@ if ($availability !== '') {
     $params[] = (int) $availability;
 }
 
+$lowStockFilter = req('low_stock_filter') === 'on';
+$noStockFilter = req('no_stock_filter') === 'on';
+
+if ($lowStockFilter || $noStockFilter) {
+    // Matches the same thresholds as the stock_alert icon below: "low" is
+    // stock under 10 but still available to sell, "no stock" is 0 or less.
+    // Either box alone narrows to just that state; both together is an OR,
+    // not a contradiction — it just widens back to "stock under 10".
+    $stockStatusConditions = [];
+    if ($noStockFilter) {
+        $stockStatusConditions[] = 'stock <= 0';
+    }
+    if ($lowStockFilter) {
+        $stockStatusConditions[] = '(stock > 0 AND stock < 10)';
+    }
+    $conditions[] = '(' . implode(' OR ', $stockStatusConditions) . ')';
+}
+
 $sql = 'SELECT product_id, product_name, price, weight, stock, availability
         FROM product
         WHERE ' . implode(' AND ', $conditions) . "
@@ -71,7 +89,7 @@ foreach ($products as $product) {
     if ($product->stock <= 0) {
         $product->stock_alert = 'redalert.png';
         $product->stock_alert_label = 'Out of Stock';
-    } elseif ($product->stock < 20) {
+    } elseif ($product->stock < 10) {
         $product->stock_alert = 'yellowalert.png';
         $product->stock_alert_label = 'Low Stock';
     } else {
@@ -90,6 +108,14 @@ $adminFilter = [
         ['type' => 'range', 'label' => 'Price (RM)', 'min_name' => 'price_min', 'max_name' => 'price_max'],
         ['type' => 'range', 'label' => 'Weight (kg)', 'min_name' => 'weight_min', 'max_name' => 'weight_max'],
         ['type' => 'range', 'label' => 'Stock', 'min_name' => 'stock_min', 'max_name' => 'stock_max'],
+        [
+            'type' => 'checkbox-group',
+            'label' => 'Stock Status',
+            'options' => [
+                ['name' => 'low_stock_filter', 'label' => 'Low Stock', 'icon' => 'yellowalert.png'],
+                ['name' => 'no_stock_filter', 'label' => 'No Stock', 'icon' => 'redalert.png'],
+            ],
+        ],
         [
             'name' => 'availability',
             'label' => 'Availability',

@@ -126,7 +126,7 @@ include '../_head.php';
                 </div>
             </dl>
 
-            <?php if ($product->stock > 0 && $product->stock < 30): ?>
+            <?php if ($product->stock > 0 && $product->stock < 10): ?>
                 <p class="low-stock">Low in stock—only <?= htmlspecialchars($product->stock) ?> remaining.</p>
             <?php elseif ($product->stock < 1): ?>
                 <p class="out-of-stock">Out of stock.</p>
