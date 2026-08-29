@@ -59,6 +59,14 @@ const syncToggleFields = () => {
 syncToggleFields();
 toggleFields.forEach(toggle => toggle.addEventListener('change', syncToggleFields));
 
+// Voucher codes are always uppercase letters/digits only (matches the admin
+// voucher-create/update code-entry fields) — restrict as the member types
+// rather than only rejecting on submit.
+const voucherCodeInput = document.getElementById('voucher_code');
+voucherCodeInput?.addEventListener('input', () => {
+    voucherCodeInput.value = voucherCodeInput.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+});
+
 const adminFilterBtn = document.getElementById('admin-table-filter-btn');
 const adminFilterDialog = document.getElementById('admin-table-filter-dialog');
 const adminFilterClose = document.getElementById('admin-table-filter-close');

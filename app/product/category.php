@@ -71,11 +71,11 @@ include '../_head.php';
 <form class="price-range" method="get">
     <input type="hidden" name="category" value="<?= htmlspecialchars($cat) ?>">
     <label>
-        Least (RM)
+        Min (RM)
         <input type="number" name="least" value="<?= htmlspecialchars($least) ?>" min="0" step="1" inputmode="decimal">
     </label>
     <label>
-        Most (RM)
+        Max (RM)
         <input type="number" name="most" value="<?= htmlspecialchars($most) ?>" min="0" step="1" inputmode="decimal">
     </label>
     <section class="price-range-actions">

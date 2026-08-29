@@ -143,11 +143,18 @@ if (is_post()) {
             if ($candidate === '') {
                 continue;
             }
+            if (!preg_match('/^[' . $codeCharset . ']{1,50}$/', $candidate)) {
+                // Client-side JS already restricts typed codes to this
+                // charset, so this only matters for a crafted request —
+                // fall back to a fresh random code rather than accepting an
+                // out-of-charset value, matching voucher-create.php.
+                $candidate = '';
+            }
 
             // Prefer the code chosen in the popup; fall back to a fresh
             // random one if it collides with an existing/already-picked
             // code, matching voucher-create.php's behavior.
-            while (in_array($candidate, $pickedCodes, true) || ($codeCheck->execute([$candidate, $rowId]) && $codeCheck->fetchColumn())) {
+            while ($candidate === '' || in_array($candidate, $pickedCodes, true) || ($codeCheck->execute([$candidate, $rowId]) && $codeCheck->fetchColumn())) {
                 $candidate = '';
                 for ($j = 0; $j < 7; $j++) {
                     $candidate .= $codeCharset[random_int(0, strlen($codeCharset) - 1)];
