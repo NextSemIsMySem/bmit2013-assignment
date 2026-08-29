@@ -40,8 +40,6 @@ if (is_post()) {
 
     if ($email === '') {
         $_err['email'] = 'Email is required.';
-    } elseif ($email !== $_user->email) {
-        $_err['email'] = 'Email changes require verification and are not available here.';
     } elseif (strlen($email) > 255) {
         $_err['email'] = 'Email must be at most 255 characters.';
     } elseif (!is_email($email)) {
@@ -65,17 +63,52 @@ if (is_post()) {
         }
     }
 
+    $emailChanged = $email !== $_user->email;
+
     if (!$_err) {
-        $stm = $_db->prepare('UPDATE user SET username = ?, name = ?, email = ?, photo = ? WHERE user_id = ?');
-        $stm->execute([$username, $name, $email, $photo, $_user->user_id]);
+        $pendingEmail = $_user->pending_email ?? null;
+        $verificationSent = false;
 
-        $_user->username = $username;
-        $_user->name = $name;
-        $_user->email = $email;
-        $_user->photo = $photo;
+        if ($emailChanged) {
+            $tokenId = bin2hex(random_bytes(32));
+            $_db->prepare('DELETE FROM token WHERE user_id = ? AND type = "verification"')->execute([$_user->user_id]);
+            $_db->prepare('INSERT INTO token (id, expire, user_id, type) VALUES (?, ADDTIME(NOW(), "24:00"), ?, "verification")')->execute([$tokenId, $_user->user_id]);
 
-        temp('info', 'Profile updated.');
-        redirect('/user/profile.php');
+            try {
+                $m = get_mail();
+                $m->addAddress($email, $name !== '' ? $name : $username);
+                $m->isHTML(true);
+                $m->Subject = 'Verify your new email address';
+                $url = base("user/verify.php?id=$tokenId");
+                $m->Body = "<p>Dear " . encode($name !== '' ? $name : $username) . ",</p>
+                            <p>Your ForgeFit account email change is awaiting confirmation.</p>
+                            <p>Please click <a href='$url'>here</a> to verify your new email address. This link expires in 24 hours.</p>
+                            <p>From, ForgeFit Admin</p>";
+                $m->send();
+                $verificationSent = true;
+                $pendingEmail = $email;
+            } catch (Exception $e) {
+                $_db->prepare('DELETE FROM token WHERE id = ?')->execute([$tokenId]);
+                $_err['email'] = 'Could not send the verification email right now. Please try again later.';
+            }
+        }
+
+        if (!$_err) {
+            $stm = $_db->prepare('UPDATE user SET username = ?, name = ?, photo = ?, pending_email = ? WHERE user_id = ?');
+            $stm->execute([$username, $name, $photo, $pendingEmail, $_user->user_id]);
+
+            $_user->username = $username;
+            $_user->name = $name;
+            $_user->photo = $photo;
+            $_user->pending_email = $pendingEmail;
+
+            if ($verificationSent) {
+                temp('info', 'A verification email has been sent to your new email address. Your current email remains active until it is confirmed.');
+            } else {
+                temp('info', 'Profile updated.');
+            }
+            redirect('/user/profile.php');
+        }
     }
 }
 

@@ -15,8 +15,17 @@ if (!$verification) {
     redirect('/login.php');
 }
 
-$_db->prepare('UPDATE user SET email_verified = 1 WHERE user_id = ?')->execute([$verification->user_id]);
+$userStmt = $_db->prepare('SELECT * FROM user WHERE user_id = ?');
+$userStmt->execute([$verification->user_id]);
+$user = $userStmt->fetch();
+
+if ($user && $user->pending_email) {
+    $_db->prepare('UPDATE user SET email = ?, pending_email = NULL, email_verified = 1 WHERE user_id = ?')->execute([$user->pending_email, $user->user_id]);
+} else {
+    $_db->prepare('UPDATE user SET email_verified = 1 WHERE user_id = ?')->execute([$verification->user_id]);
+}
+
 $_db->prepare('DELETE FROM token WHERE id = ?')->execute([$id]);
 
-temp('info', 'Email verified successfully. You may now log in.');
+temp('info', 'Email verified successfully. Your account email has been updated.');
 redirect('/login.php');

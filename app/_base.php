@@ -14,6 +14,21 @@ $_db = new PDO(
     [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ]
 );
 
+function ensure_pending_email_column() {
+    global $_db;
+
+    try {
+        $stm = $_db->query("SHOW COLUMNS FROM user LIKE 'pending_email'");
+        if (!$stm->fetch()) {
+            $_db->exec('ALTER TABLE user ADD COLUMN pending_email VARCHAR(255) NULL DEFAULT NULL AFTER email');
+        }
+    } catch (Throwable $e) {
+        // Ignore schema check failures here; the real app flow will still fail fast if the DB is unusable.
+    }
+}
+
+ensure_pending_email_column();
+
 $_err = [];
 
 // ============================================================================
