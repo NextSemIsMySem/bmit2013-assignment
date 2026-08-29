@@ -60,6 +60,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   params for each side's input, 'percentage_label'/'amount_label' =>
  *   optional input labels]. Type 'range' renders paired minimum/maximum
  *   number inputs and validates that the minimum does not exceed the maximum.
+ *   Type 'checkbox-group' renders several independent checkboxes under one
+ *   optional legend: ['label' => optional legend text, 'options' =>
+ *   [['name' => 'query param for this checkbox', 'label' => checkbox text,
+ *   'icon' => optional /images/ filename shown next to the label], ...]] —
+ *   each checkbox applies (or doesn't) on its own, not mutually exclusive.
  * - $adminBulkSelect: ['key' => 'row id property', 'storageKey' => unique
  *   localStorage key for this table, 'selectAllUrl' => optional GET endpoint
  *   returning a JSON array of every id matching the current search/filter
@@ -126,6 +131,9 @@ if ($adminFilter) {
         }
         if (($field['type'] ?? '') === 'range') {
             return [$field['min_name'], $field['max_name']];
+        }
+        if (($field['type'] ?? '') === 'checkbox-group') {
+            return array_column($field['options'], 'name');
         }
         return [$field['name']];
     };
@@ -194,10 +202,31 @@ if ($adminFilter) {
                 <legend><?= encode($field['label'] ?? 'Range') ?></legend>
                 <div class="admin-filter-range__inputs">
                     <label for="<?= encode($rangeId) ?>-min">Min</label>
-                    <input type="number" id="<?= encode($rangeId) ?>-min" name="<?= encode($minName) ?>" value="<?= encode($minValue) ?>" data-range-min>
+                    <input type="text" inputmode="decimal" id="<?= encode($rangeId) ?>-min" name="<?= encode($minName) ?>" value="<?= encode($minValue) ?>" data-range-min>
                     <label for="<?= encode($rangeId) ?>-max">Max</label>
-                    <input type="number" id="<?= encode($rangeId) ?>-max" name="<?= encode($maxName) ?>" value="<?= encode($maxValue) ?>" data-range-max>
+                    <input type="text" inputmode="decimal" id="<?= encode($rangeId) ?>-max" name="<?= encode($maxName) ?>" value="<?= encode($maxValue) ?>" data-range-max>
                 </div>
+            </fieldset>
+            <?php
+            return;
+        }
+
+        if ($fieldType === 'checkbox-group') {
+            ?>
+            <fieldset class="admin-filter-checkbox-group">
+                <?php if (!empty($field['label'])): ?>
+                    <legend><?= encode($field['label']) ?></legend>
+                <?php endif; ?>
+                <?php foreach ($field['options'] as $option): ?>
+                    <?php $optionChecked = req($option['name']) === 'on'; ?>
+                    <label class="admin-filter-checkbox-group__option">
+                        <input type="checkbox" name="<?= encode($option['name']) ?>" <?= $optionChecked ? 'checked' : '' ?>>
+                        <?php if (!empty($option['icon'])): ?>
+                            <img src="/images/<?= encode($option['icon']) ?>" alt="">
+                        <?php endif; ?>
+                        <?= encode($option['label']) ?>
+                    </label>
+                <?php endforeach; ?>
             </fieldset>
             <?php
             return;
@@ -316,7 +345,7 @@ if ($adminPaginate) {
                 <button type="submit" class="admin-table-search__button" aria-label="<?= encode($adminSearchLabel) ?>">
                     <img src="/images/search.png" alt="">
                 </button>
-                <a class="admin-table-search-reset" href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset</a>
+                <a class="admin-table-search-reset" href="?<?= encode(http_build_query($adminSearchParams)) ?>">Reset Search</a>
             </form>
         <?php endif; ?>
         <?php if ($adminFilter): ?>

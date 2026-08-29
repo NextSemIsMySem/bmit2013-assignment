@@ -67,6 +67,48 @@ voucherCodeInput?.addEventListener('input', () => {
     voucherCodeInput.value = voucherCodeInput.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
 });
 
+// Price and weight accept a plain decimal value, at most 2 digits after the
+// point — strips anything else and drops extra decimal digits as typed
+// rather than only catching it on submit.
+const restrictToDecimal = value => {
+    let v = value.replace(/[^0-9.]/g, '');
+    const dotIndex = v.indexOf('.');
+    if (dotIndex !== -1) {
+        v = v.slice(0, dotIndex + 1) + v.slice(dotIndex + 1).replace(/\./g, '');
+        const [whole, fraction] = v.split('.');
+        if (fraction && fraction.length > 2) {
+            v = whole + '.' + fraction.slice(0, 2);
+        }
+    }
+    return v;
+};
+['price', 'weight'].forEach(id => {
+    const field = document.getElementById(id);
+    field?.addEventListener('input', () => {
+        field.value = restrictToDecimal(field.value);
+    });
+});
+
+// Same restriction for the admin table Filter dialog's Min/Max range
+// fields (price, weight, stock) — these are type="text" rather than
+// type="number" specifically so this can safely rewrite .value on every
+// keystroke; a native number input silently blanks itself the instant an
+// intermediate value like "35." gets assigned to it.
+document.querySelectorAll('[data-range-min], [data-range-max]').forEach(field => {
+    field.addEventListener('input', () => {
+        field.value = restrictToDecimal(field.value);
+    });
+});
+
+// Same fix for the member-facing price-range filters (category.php,
+// search.php) — same reasoning as above, hence also type="text" rather
+// than type="number" in the markup.
+document.querySelectorAll('[data-decimal-input]').forEach(field => {
+    field.addEventListener('input', () => {
+        field.value = restrictToDecimal(field.value);
+    });
+});
+
 const adminFilterBtn = document.getElementById('admin-table-filter-btn');
 const adminFilterDialog = document.getElementById('admin-table-filter-dialog');
 const adminFilterClose = document.getElementById('admin-table-filter-close');

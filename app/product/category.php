@@ -70,14 +70,16 @@ include '../_head.php';
 
 <form class="price-range" method="get">
     <input type="hidden" name="category" value="<?= htmlspecialchars($cat) ?>">
-    <label>
-        Min (RM)
-        <input type="number" name="least" value="<?= htmlspecialchars($least) ?>" min="0" step="1" inputmode="decimal">
-    </label>
-    <label>
-        Max (RM)
-        <input type="number" name="most" value="<?= htmlspecialchars($most) ?>" min="0" step="1" inputmode="decimal">
-    </label>
+    <div class="price-range__fields">
+        <label>
+            Min (RM)
+            <input type="text" inputmode="decimal" name="least" value="<?= htmlspecialchars($least) ?>" data-decimal-input>
+        </label>
+        <label>
+            Max (RM)
+            <input type="text" inputmode="decimal" name="most" value="<?= htmlspecialchars($most) ?>" data-decimal-input>
+        </label>
+    </div>
     <section class="price-range-actions">
         <button type="submit">Apply price range</button>
         <a href="?category=<?= htmlspecialchars($cat) ?>">Reset</a>
