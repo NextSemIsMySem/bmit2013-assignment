@@ -64,6 +64,12 @@ $adminSearch = [
 ];
 $adminActions = [
     [
+        'label'  => 'View detail',
+        'icon'   => 'search.png',
+        'method' => 'get',
+        'url'    => fn($row) => 'detail.php?id=' . $row->user_id,
+    ],
+    [
         'label'   => fn($row) => $row->active ? 'Disable admin' : 'Activate admin',
         'icon'    => fn($row) => $row->active ? 'activate.png' : 'disable.png',
         'method'  => 'post',
