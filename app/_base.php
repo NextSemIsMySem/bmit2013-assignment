@@ -335,16 +335,13 @@ function base($path = '') {
     return "http://$_SERVER[SERVER_NAME]:$_SERVER[SERVER_PORT]/$path";
 }
 
-// Mail credentials live in app/_config.php, which is gitignored so they are
-// never committed. Copy app/_config.sample.php to app/_config.php and fill in
-// your own values.
-function mail_config() {
+function get_config() {
     $file = __DIR__ . '/_config.php';
     return file_exists($file) ? require $file : [];
 }
 
 function google_maps_api_key() {
-    $config = mail_config();
+    $config = get_config();
     return $config['google_maps_api_key'] ?? '';
 }
 
@@ -353,7 +350,7 @@ function get_mail() {
     require_once __DIR__ . '/lib/PHPMailer.php';
     require_once __DIR__ . '/lib/SMTP.php';
 
-    $cfg = mail_config();
+    $cfg = get_config();
 
     $m = new PHPMailer(true);
     $m->isSMTP();
