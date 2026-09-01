@@ -107,7 +107,7 @@ $adminFilter = [
     'fields' => [
         ['type' => 'range', 'label' => 'Price (RM)', 'min_name' => 'price_min', 'max_name' => 'price_max'],
         ['type' => 'range', 'label' => 'Weight (kg)', 'min_name' => 'weight_min', 'max_name' => 'weight_max'],
-        ['type' => 'range', 'label' => 'Stock', 'min_name' => 'stock_min', 'max_name' => 'stock_max'],
+        ['type' => 'range', 'label' => 'Stock', 'min_name' => 'stock_min', 'max_name' => 'stock_max', 'integer' => true],
         [
             'type' => 'checkbox-group',
             'label' => 'Stock Status',

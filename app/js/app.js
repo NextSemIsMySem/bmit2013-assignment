@@ -90,13 +90,21 @@ const restrictToDecimal = value => {
 });
 
 // Same restriction for the admin table Filter dialog's Min/Max range
-// fields (price, weight, stock) — these are type="text" rather than
-// type="number" specifically so this can safely rewrite .value on every
-// keystroke; a native number input silently blanks itself the instant an
-// intermediate value like "35." gets assigned to it.
-document.querySelectorAll('[data-range-min], [data-range-max]').forEach(field => {
+// fields (price, weight) — these are type="text" rather than type="number"
+// specifically so this can safely rewrite .value on every keystroke; a
+// native number input silently blanks itself the instant an intermediate
+// value like "35." gets assigned to it. Whole-number fields (stock) are
+// marked data-range-integer instead and handled separately below.
+document.querySelectorAll('[data-range-min]:not([data-range-integer]), [data-range-max]:not([data-range-integer])').forEach(field => {
     field.addEventListener('input', () => {
         field.value = restrictToDecimal(field.value);
+    });
+});
+
+// Whole-number range fields (e.g. Stock) don't accept a decimal point at all.
+document.querySelectorAll('[data-range-integer]').forEach(field => {
+    field.addEventListener('input', () => {
+        field.value = field.value.replace(/[^0-9]/g, '');
     });
 });
 
@@ -118,19 +126,23 @@ adminFilterClose?.addEventListener('click', () => adminFilterDialog.close());
 document.querySelector('.admin-table-filter-form')?.addEventListener('submit', event => {
     let valid = true;
 
+    // Shown as an inline message right under that field's own inputs (like
+    // every other error in this app) rather than the browser's native
+    // validation bubble — inside the cramped filter dialog, that bubble had
+    // nowhere to go but over the next fieldset's fields.
     document.querySelectorAll('[data-admin-filter-range]').forEach(range => {
         const minInput = range.querySelector('[data-range-min]');
         const maxInput = range.querySelector('[data-range-max]');
+        const errorEl = range.querySelector('[data-range-error]');
         const hasBothValues = minInput.value !== '' && maxInput.value !== '';
         const isValid = !hasBothValues || Number(minInput.value) <= Number(maxInput.value);
 
-        maxInput.setCustomValidity(isValid ? '' : 'Maximum must be greater than or equal to minimum.');
+        if (errorEl) errorEl.textContent = isValid ? '' : 'Maximum must be greater than or equal to minimum.';
         valid = valid && isValid;
     });
 
     if (!valid) {
         event.preventDefault();
-        event.currentTarget.reportValidity();
     }
 });
 
@@ -346,7 +358,7 @@ document.querySelectorAll('[data-login-required]').forEach(button => {
 
         event.preventDefault();
         event.stopImmediatePropagation();
-        window.location.assign('/login.php');
+        window.location.assign('/login.php?return=' + encodeURIComponent(location.pathname + location.search));
     }, true);
 });
 

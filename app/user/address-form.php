@@ -2,17 +2,6 @@
 require '../_base.php';
 auth('member');
 
-// Only follow `return` back to a local page (never an absolute/external
-// URL) — this is reachable from checkout when the buyer has no saved
-// address yet, so they land back where they were instead of the plain
-// address list.
-function safe_local_url($url, $default) {
-    if ($url !== '' && str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, '://')) {
-        return $url;
-    }
-    return $default;
-}
-
 function google_address_from_place($placeId) {
     $apiKey = google_maps_api_key();
     if ($apiKey === '' || $placeId === '') return null;

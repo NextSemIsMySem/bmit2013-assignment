@@ -52,6 +52,16 @@ function redirect($url) {
     exit;
 }
 
+// Only follow a `return`/redirect-back URL if it's local (never an
+// absolute/external URL) — used anywhere a page accepts a "come back here
+// after this" param, so it can't be abused to redirect somewhere off-site.
+function safe_local_url($url, $default) {
+    if ($url !== '' && str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, '://')) {
+        return $url;
+    }
+    return $default;
+}
+
 function csrf_token() {
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
