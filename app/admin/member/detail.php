@@ -31,7 +31,19 @@ include '../../_head.php';
 <div class="buttons">
     <button type="button" data-get="index.php">Back</button>
     <button type="button" data-get="update.php?id=<?= encode($member->user_id) ?>">Edit</button>
-    <button type="button" data-post="delete.php?id=<?= encode($member->user_id) ?>">Delete</button>
+    <?php if ($member->active): ?>
+        <button
+            type="button"
+            data-post="member-disable.php?id=<?= encode($member->user_id) ?>"
+            data-confirm="Disable this member?"
+        >Disable</button>
+    <?php else: ?>
+        <button
+            type="button"
+            data-post="member-activate.php?id=<?= encode($member->user_id) ?>"
+            data-confirm="Activate this member?"
+        >Activate</button>
+    <?php endif; ?>
 </div>
 
 <?php
