@@ -45,7 +45,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
  *   'Field label', 'type' => 'select' (default) or any <input> type like
  *   'date'/'number'/'text', 'options' => ['value' => 'Option label', ...]
  *   (for type 'select'), 'placeholder' => optional "no filter" option text,
- *   default 'All'], ...]]. Adds a "Filter" button beside the search box
+ *   default 'All', 'min'/'max'/'step' => optional constraints passed through
+ *   to a 'number' input], ...]]. Adds a "Filter" button beside the search box
  *   that opens a dialog with the given fields; applying submits them as GET
  *   params (resetting to page 1), same as search/sort. Leave 'fields' empty
  *   to still show the button while its filters are being decided later.
@@ -181,11 +182,11 @@ if ($adminFilter) {
             </label>
             <div id="<?= $percentageRowId ?>" class="full-width-label" <?= $typeValue === 'fixed' ? 'hidden' : '' ?>>
                 <label for="admin-filter-<?= encode($percentageName) ?>"><?= encode($field['percentage_label'] ?? 'Min Discount %') ?></label>
-                <input type="number" id="admin-filter-<?= encode($percentageName) ?>" name="<?= encode($percentageName) ?>" value="<?= encode(req($percentageName, '')) ?>">
+                <input type="number" id="admin-filter-<?= encode($percentageName) ?>" name="<?= encode($percentageName) ?>" value="<?= encode(req($percentageName, '')) ?>" min="0" max="100" step="0.01">
             </div>
             <div id="<?= $amountRowId ?>" class="full-width-label" <?= $typeValue !== 'fixed' ? 'hidden' : '' ?>>
                 <label for="admin-filter-<?= encode($amountName) ?>"><?= encode($field['amount_label'] ?? 'Min Discount Amount (RM)') ?></label>
-                <input type="number" id="admin-filter-<?= encode($amountName) ?>" name="<?= encode($amountName) ?>" value="<?= encode(req($amountName, '')) ?>">
+                <input type="number" id="admin-filter-<?= encode($amountName) ?>" name="<?= encode($amountName) ?>" value="<?= encode(req($amountName, '')) ?>" min="0" step="0.01">
             </div>
             <?php
             return;
@@ -197,15 +198,36 @@ if ($adminFilter) {
             $minValue = req($minName, '');
             $maxValue = req($maxName, '');
             $rangeId = 'admin-filter-range-' . preg_replace('/[^a-zA-Z0-9_-]/', '-', $minName);
+            // Whole-number fields (e.g. Stock — a count, never fractional)
+            // opt out of decimal support entirely rather than just getting
+            // the same 2-decimal-place cap as price/weight.
+            $isInteger = !empty($field['integer']);
             ?>
             <fieldset class="admin-filter-range" data-admin-filter-range>
                 <legend><?= encode($field['label'] ?? 'Range') ?></legend>
                 <div class="admin-filter-range__inputs">
                     <label for="<?= encode($rangeId) ?>-min">Min</label>
-                    <input type="text" inputmode="decimal" id="<?= encode($rangeId) ?>-min" name="<?= encode($minName) ?>" value="<?= encode($minValue) ?>" data-range-min>
+                    <input
+                        type="text"
+                        inputmode="<?= $isInteger ? 'numeric' : 'decimal' ?>"
+                        id="<?= encode($rangeId) ?>-min"
+                        name="<?= encode($minName) ?>"
+                        value="<?= encode($minValue) ?>"
+                        data-range-min
+                        <?= $isInteger ? 'data-range-integer' : '' ?>
+                    >
                     <label for="<?= encode($rangeId) ?>-max">Max</label>
-                    <input type="text" inputmode="decimal" id="<?= encode($rangeId) ?>-max" name="<?= encode($maxName) ?>" value="<?= encode($maxValue) ?>" data-range-max>
+                    <input
+                        type="text"
+                        inputmode="<?= $isInteger ? 'numeric' : 'decimal' ?>"
+                        id="<?= encode($rangeId) ?>-max"
+                        name="<?= encode($maxName) ?>"
+                        value="<?= encode($maxValue) ?>"
+                        data-range-max
+                        <?= $isInteger ? 'data-range-integer' : '' ?>
+                    >
                 </div>
+                <span class="err" data-range-error></span>
             </fieldset>
             <?php
             return;
@@ -252,6 +274,9 @@ if ($adminFilter) {
                 id="admin-filter-<?= encode($fieldName) ?>"
                 name="<?= encode($fieldName) ?>"
                 value="<?= encode($fieldValue) ?>"
+                <?= isset($field['min']) ? 'min="' . encode($field['min']) . '"' : '' ?>
+                <?= isset($field['max']) ? 'max="' . encode($field['max']) . '"' : '' ?>
+                <?= isset($field['step']) ? 'step="' . encode($field['step']) . '"' : '' ?>
             >
         <?php endif; ?>
         <?php

@@ -32,7 +32,16 @@ $minSpendValue = req('min_spend_value', '');
 $conditions = ['v.name LIKE ?', "v.status != 'expired'"];
 $params = ["%$name%"];
 
-if ($status !== '') {
+if ($status === 'pending') {
+    // "Pending" isn't a real status value — it's an active configuration
+    // whose start_date hasn't arrived yet, same is_pending computation used
+    // for the Status column's display text below.
+    $conditions[] = "v.status = 'active' AND v.start_date > NOW()";
+} elseif ($status === 'active') {
+    // Matches "Pending" being split out above: Active here now means
+    // genuinely live (already started), not just any 'active' row.
+    $conditions[] = "v.status = 'active' AND v.start_date <= NOW()";
+} elseif ($status !== '') {
     $conditions[] = 'v.status = ?';
     $params[] = $status;
 }
@@ -89,7 +98,7 @@ $adminFilter = [
         [
             'name' => 'status',
             'label' => 'Status',
-            'options' => ['active' => 'Active', 'disabled' => 'Disabled'],
+            'options' => ['active' => 'Active', 'pending' => 'Pending', 'disabled' => 'Disabled'],
         ],
         [
             'type' => 'toggle',
@@ -110,9 +119,9 @@ $adminFilter = [
         [
             'type' => 'toggle',
             'name' => 'min_spend_toggle',
-            'label' => 'Require a minimum spend',
+            'label' => 'Filter by minimum spend',
             'fields' => [
-                ['name' => 'min_spend_value', 'label' => 'Minimum Spend (RM)', 'type' => 'number'],
+                ['name' => 'min_spend_value', 'label' => 'At least (RM)', 'type' => 'number', 'min' => '0', 'step' => '0.01'],
             ],
         ],
     ],

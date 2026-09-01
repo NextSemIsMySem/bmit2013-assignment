@@ -1,8 +1,10 @@
 <?php
 require '_base.php';
 
+$returnUrl = safe_local_url(req('return'), '/index.php');
+
 if ($_user) {
-    redirect(is_admin() ? '/admin/member/index.php' : '/index.php');
+    redirect(is_admin() ? '/admin/member/index.php' : $returnUrl);
 }
 
 if (is_post()) {
@@ -45,7 +47,7 @@ if (is_post()) {
             $passwordInvalid = true;
         } elseif ($u) {
             temp('info', 'Login successful.');
-            login($u, '/index.php');
+            login($u, $returnUrl);
         } else {
             $_err['password'] = 'Invalid email or password'; // generic — don't reveal which
             $passwordInvalid = true;
@@ -63,6 +65,7 @@ include '_head.php';
 
 <form class="form" method="post">
     <?= csrf_field() ?>
+    <input type="hidden" name="return" value="<?= encode($returnUrl) ?>">
     <?php html_text('identifier', 'Email or Username', 'text', false, '[!-~]+', 'identifier'); ?>
     <?php html_password('password', 'Password'); ?>
     <section class="buttons">
