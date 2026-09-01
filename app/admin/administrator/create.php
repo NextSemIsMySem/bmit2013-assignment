@@ -76,6 +76,7 @@ include '../../_head.php';
 ?>
 
 <form class="form" method="post">
+    <?= csrf_field() ?>
     <?php html_text('name', 'Name'); ?>
     <?php html_text('username', 'Username'); ?>
     <?php html_text('email', 'Email', 'email'); ?>
