@@ -22,6 +22,11 @@ if (!in_array($reason, $reasons, true)) {
     redirect('/orders/detail.php?id=' . $orderId);
 }
 
+if ($reason === 'Others' && $reasonNote === '') {
+    temp('info', 'Please tell us more when selecting "Others".');
+    redirect('/orders/detail.php?id=' . $orderId);
+}
+
 $stmt = $_db->prepare(
     'SELECT order_id, status, cancellation_requested_at FROM orders WHERE order_id = ? AND user_id = ?'
 );

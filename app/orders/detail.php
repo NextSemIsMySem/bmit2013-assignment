@@ -99,7 +99,7 @@ include '../_head.php';
             <textarea
                 id="cancel-reason-note"
                 name="reason_note"
-                placeholder="Tell us more (optional)"
+                placeholder="Tell us more"
                 hidden
             ></textarea>
 

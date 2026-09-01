@@ -1297,6 +1297,7 @@ document.querySelectorAll('[data-print-receipt]').forEach(button => {
     dialog.querySelectorAll('input[name="reason"]').forEach(radio => {
         radio.addEventListener('change', () => {
             reasonNote.hidden = !othersRadio.checked;
+            reasonNote.required = othersRadio.checked;
         });
     });
 })();
