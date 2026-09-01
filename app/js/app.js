@@ -153,17 +153,18 @@ document.querySelectorAll('[data-bulk-select]').forEach(bar => {
     const selectAllKey = bar.dataset.selectAllKey;
     const selectAllStatusKey = bar.dataset.selectAllStatusKey;
 
-    // Selection should persist across pagination of the SAME table (same
-    // pathname, different query string) but not survive navigating away to
-    // a different admin page and back. Since every navigation here is a
-    // full page load, track the last-visited pathname/table in
-    // sessionStorage and drop the previous table's selection the moment a
-    // different pathname loads.
+    // Selection should persist across pagination/filter/sort links within
+    // the SAME table (same pathname, different query string) but not
+    // survive navigating away to a different admin page and back, or a
+    // plain browser refresh of the same page — a refresh reads as the user
+    // starting over, not as "go to the next page of my selection".
     const currentPath = location.pathname;
     const lastPath = sessionStorage.getItem('bulk-select-last-path');
     const lastKey = sessionStorage.getItem('bulk-select-last-key');
-    if (lastPath && lastKey && lastPath !== currentPath) {
-        localStorage.removeItem(lastKey);
+    const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
+    if (isReload || (lastPath && lastKey && lastPath !== currentPath)) {
+        localStorage.removeItem(lastKey || storageKey);
+        localStorage.removeItem(`${lastKey || storageKey}-statuses`);
     }
     sessionStorage.setItem('bulk-select-last-path', currentPath);
     sessionStorage.setItem('bulk-select-last-key', storageKey);
