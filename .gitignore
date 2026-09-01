@@ -1,7 +1,4 @@
 codes/
-.claude/
-CLAUDE.md
-ROADMAP.md
 app/admin/dev-admin-login.php
 app/admin/dev-member-login.php
 app/reset.php
